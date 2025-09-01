@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { DocumentForm } from './pages/DocumentForm';
 import { Search } from './pages/Search';
 import TeamPage from './pages/TeamPage';
+import DocumentDetailPage from "./pages/DocumentDetailPage"
 import { QA } from './pages/QA';
 import { Profile } from './pages/Profile';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -44,14 +45,6 @@ function App() {
             }
           />
           <Route
-            path="/documents/:id/edit"
-            element={
-              <ProtectedRoute>
-                <DocumentForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/search"
             element={
               <ProtectedRoute>
@@ -75,6 +68,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path='/document/edit/:documentId' element={<ProtectedRoute><DocumentDetailPage/></ProtectedRoute>}/>
+          
           <Route path='/team' element={<ProtectedRoute><TeamPage/></ProtectedRoute>}/>
           <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
         </Routes>

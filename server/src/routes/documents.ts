@@ -86,7 +86,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
 // Create document
 router.post('/', authenticate, async (req: AuthRequest, res) => {
   try {
-    const { title, content, tags = [] } = req.body;
+    const { title, content , summary, tags = [] } = req.body;
     const user = req.user!;
 
     if (!user.teamId) {
@@ -98,6 +98,7 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       content,
       tags,
       createdBy: user._id,
+      summary : summary ? summary : "",
       teamId: user.teamId,   // 👈 attach team here
       versions: [{
         content,

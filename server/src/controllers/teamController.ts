@@ -136,6 +136,10 @@ export const deleteTeam = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ message: "Only owner can delete team" });
     }
 
+    await User.updateMany({
+      teamId : teamId
+    },{$set:{teamId : null}});
+
     await Team.findByIdAndDelete(teamId);
 
     res.json({ message: "Team deleted successfully" });

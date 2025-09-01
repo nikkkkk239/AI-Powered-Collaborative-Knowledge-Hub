@@ -2,6 +2,7 @@ import React from 'react';
 import { FileText, Tag, User, Calendar, Trash2, Edit, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useAIStore } from '../stores/aiStore';
+import { useNavigate } from 'react-router-dom';
 
 interface Document {
   _id: string;
@@ -35,12 +36,13 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
 }) => {
   const { user } = useAuthStore();
   const { isProcessing } = useAIStore();
+  const navigate = useNavigate();
   
-  const canEdit = user?.role === 'admin' || document.createdBy._id === user?.id;
+  const canEdit = user?.role === 'admin' || document.createdBy._id === user?._id;
   const hasAIAccess = user?.hasGeminiKey;
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-200">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-200" onClick={()=>navigate(`/document/edit/${document._id}`)}>
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-start space-x-3">
