@@ -4,6 +4,7 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { DocumentForm } from './pages/DocumentForm';
 import { Search } from './pages/Search';
+import TeamPage from './pages/TeamPage';
 import { QA } from './pages/QA';
 import { Profile } from './pages/Profile';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -15,14 +16,15 @@ import { Toaster } from 'react-hot-toast';
 function App() {
   const { user,team } = useAuthStore();
   console.log("User : " , user);
-  console.log("Team :" , team);
+  console.log("Team : " , team);
+
   
 
   return (
     <Router>
       <div className="App">
         <Routes>
-          <Route path='/joinTeam' element={team ? <Navigate to={"/dashboard"}/> : <JoinTeam/>}/>
+          <Route path='/joinTeam' element={user?.teamId && user.teamId.length > 0 ? <Navigate to={"/dashboard"} replace/> : <JoinTeam/>}/>
 
           <Route path="/login" element={<Login />} />
           <Route
@@ -73,6 +75,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path='/team' element={<ProtectedRoute><TeamPage/></ProtectedRoute>}/>
           <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
         </Routes>
       </div>

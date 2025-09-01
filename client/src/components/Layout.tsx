@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuthStore } from '../stores/authStore';
-import { LogOut, Settings, Search, FileText, Users } from 'lucide-react';
+import { LogOut, Settings, Search, FileText, Users, UsersIcon, Handshake } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface LayoutProps {
@@ -15,6 +15,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Dashboard', href: '/dashboard', icon: FileText },
     { name: 'Search', href: '/search', icon: Search },
     { name: 'Q&A', href: '/qa', icon: Users },
+    { name: 'Team', href: '/team', icon: Handshake },
   ];
 
   return (

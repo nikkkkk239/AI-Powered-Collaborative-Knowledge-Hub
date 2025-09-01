@@ -16,19 +16,24 @@ export const createTeam = async (req: AuthRequest, res: Response) => {
     const userId = (req.user as any)._id; // from auth middleware
 
     const user = await User.findById(userId);
-    if(!user) return res.status(404).json({message: "User not found."});
+    if (!user) return res.status(404).json({ message: "User not found." });
 
-    const team = await Team.create({
+    let team = await Team.create({
       name,
       description,
       owner: userId,
-      members: [{ user: userId, role: "owner" }],
+      members: [],
     });
 
     (user as any).teamId = team._id;
     await user.save();
 
-    res.status(201).json({team , user});
+    // Populate owner and members.user
+    const populatedTeam = await Team.findById(team._id)
+      .populate("owner", "name email")
+      .populate("members.user", "name email");
+
+    res.status(201).json({ team : populatedTeam, user });
   } catch (err) {
     res.status(500).json({ message: "Error creating team", error: err });
   }
@@ -59,34 +64,37 @@ export const getUserTeams = async (req: AuthRequest, res: Response) => {
 export const joinTeam = async (req: AuthRequest, res: Response) => {
   try {
     const { teamId } = req.params;
-    const userId = req?.user?._id; // logged-in user
-    
+    const userId = req?.user?._id;
 
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ message: "Team not found" });
 
     const user = await User.findById(userId);
-    if(!user){
-      return res.status(404).json({message : "User not found."});
-    }
+    if (!user) return res.status(404).json({ message: "User not found." });
 
     // check if already in team
     if (team.members.some(m => m.user.toString() === userId.toString())) {
       return res.status(400).json({ message: "You are already a member of this team" });
     }
+
     (user as any).teamId = team._id;
     await user.save();
-    // default role = "member"
+
     team.members.push({ user: userId as any, role: "member" });
-    
     await team.save();
 
-    res.json({ message: "Joined team successfully", team , user});
+    // Populate owner and members.user
+    const populatedTeam = await Team.findById(team._id)
+      .populate("owner", "name email")
+      .populate("members.user", "name email");
+
+    res.json({ message: "Joined team successfully", team: populatedTeam, user });
   } catch (err) {
-    console.log("Error in joinTeam : " , err);
+    console.log("Error in joinTeam:", err);
     res.status(500).json({ message: "Error joining team", error: err });
   }
 };
+
 
 
 // DELETE /api/teams/:teamId/members/:memberId
@@ -135,5 +143,24 @@ export const deleteTeam = async (req: AuthRequest, res: Response) => {
     console.log("Error in deleteTeam : " , err);
 
     res.status(500).json({ message: "Error deleting team", error: err });
+  }
+};
+
+export const getTeamDetails = async (req: AuthRequest, res: Response) => {
+  try {
+    const { teamId } = req.params;
+
+    const team = await Team.findById(teamId)
+      .populate("members.user", "name email") // populate only needed fields
+      .populate("owner", "name email");
+
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+
+    res.json(team);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error fetching team details", error: err });
   }
 };

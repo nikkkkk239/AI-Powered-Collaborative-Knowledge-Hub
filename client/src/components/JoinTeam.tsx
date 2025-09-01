@@ -16,6 +16,7 @@ const JoinTeam: React.FC = () => {
     e.preventDefault();
     console.log({ teamName, teamDescription });
     await createTeam({name : teamName , description : teamDescription});
+    navigate("/dashboard")
     
   };
 
@@ -28,6 +29,8 @@ const JoinTeam: React.FC = () => {
     }
     try {
         const resilt = await joinTeam({teamId});
+        navigate("/dashboard")
+
     } catch (error:any) {
         toast.error(error);
     }
@@ -36,7 +39,10 @@ const JoinTeam: React.FC = () => {
     // 🔗 Call backend API to join team
   };
   useEffect(()=>{
+    
     if(!user) navigate("/login")
+
+    // if(user?.teamId || user?.teamId != '') navigate("/dashboard") 
   },[])
 
   return (

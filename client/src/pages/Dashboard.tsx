@@ -26,6 +26,7 @@ export const Dashboard: React.FC = () => {
   
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
 
   useEffect(() => {
     if (token) {
@@ -54,6 +55,11 @@ export const Dashboard: React.FC = () => {
       }
     }
   };
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (e.key === "Enter") {
+    setSearchQuery(searchInput); // update store only when Enter is pressed
+  }
+};
 
   const handleSummarize = async (id: string) => {
     if (!user?.hasGeminiKey) {
@@ -134,8 +140,9 @@ export const Dashboard: React.FC = () => {
               <input
                 type="text"
                 placeholder="Search documents..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>

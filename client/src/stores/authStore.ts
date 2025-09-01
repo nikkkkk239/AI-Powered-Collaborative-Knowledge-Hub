@@ -10,16 +10,21 @@ interface User {
   hasGeminiKey: boolean;
   teamId : string | null;
 }
+interface PopulatedUser{
+  _id: string;
+  name: string;
+  email: string;
+}
 
 interface Member{
-  user : string;
-  role : ["owner" | "admin" | "member"]
+  user : PopulatedUser;
+  role : "owner" | "admin" | "member";
 }
 interface Team{
   _id:string;
   name : string;
   descripton?: string;
-  owner : string;
+  owner : PopulatedUser;
   members : Member[];
 }
 
@@ -35,6 +40,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   joinTeam : (data : {teamId : string})=>Promise<void>;
   createTeam : (data:{name : string , description?:string})=>Promise<void>;
+  getTeamDetails : ()=>Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -88,7 +94,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        localStorage.clear();
+        localStorage.removeItem("auth-storage");
         set({ user: null, token: null });
       },
       createTeam : async(data : {name : string , description?:string})=>{
@@ -137,6 +143,30 @@ export const useAuthStore = create<AuthState>()(
           console.log("Error in joinTeam :" , error);
           toast.error("Failed to join team");
           
+        }
+      },
+      getTeamDetails : async()=>{
+        const {user , token} = get();
+        try {
+          const response = await fetch(`http://localhost:5000/api/team/getDetails/${user?.teamId}`,{
+            method :"GET",
+            headers:{
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            }
+          })
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message);
+          }
+
+          const team = await response.json();
+          set({ team });
+
+        } catch (error) {
+          console.log("Error in getTeam Details:" , error);
+          toast.error("Fetching Failed.") 
         }
       },
 

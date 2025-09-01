@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { createTeam, getUserTeams, joinTeam, removeMember, deleteTeam } from "../controllers/teamController";
+import { createTeam, joinTeam, removeMember, deleteTeam, getTeamDetails } from "../controllers/teamController";
 import { authenticate } from "../middleware/auth";
 
 const router = Router();
 
 router.post("/", authenticate, createTeam);
-router.get("/", authenticate, getUserTeams);
+router.get("/getDetails/:teamId", authenticate, getTeamDetails);
 router.post("/:teamId/join", authenticate, joinTeam);
 router.delete("/:teamId/members/:memberId", authenticate, removeMember);
 router.delete("/:teamId", authenticate, deleteTeam);

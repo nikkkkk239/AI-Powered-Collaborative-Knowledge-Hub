@@ -3,11 +3,23 @@ import Document from '../models/Document';
 import User from '../models/User';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { ObjectId } from 'mongoose';
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 100,
+  message: "Too many requests, please try again later.",
+  handler: (req, res) => {
+    res.status(429).json({
+      message: "Too many requests from this IP, please try again later."
+    });
+  }
+});
 
 const router = express.Router();
 
 // Get all documents
-router.get('/', authenticate, async (req: AuthRequest, res) => {
+router.get('/' , limiter, authenticate, async (req: AuthRequest, res) => {
   try {
     const { search, tags, page = 1, limit = 10 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
@@ -128,7 +140,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
       summary: document.summary,
       tags: document.tags,
       teamId : document.teamId,
-      updatedBy: userId,
+      updatedBy: userId as any,
       updatedAt: new Date()
     });
 
