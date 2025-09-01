@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuthStore } from "../stores/authStore";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -35,6 +35,9 @@ const JoinTeam: React.FC = () => {
 
     // 🔗 Call backend API to join team
   };
+  useEffect(()=>{
+    if(!user) navigate("/login")
+  },[])
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">

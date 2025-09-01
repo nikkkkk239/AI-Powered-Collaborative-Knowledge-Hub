@@ -16,7 +16,7 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ message: "User has no team" });
     }
 
-    let query: any = { team: req.user.teamId };
+    let query: any = { teamId: req.user.teamId };
 
     if (search) {
       query.$text = { $search: search as string };
@@ -86,7 +86,7 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       content,
       tags,
       createdBy: user._id,
-      team: user.teamId,   // 👈 attach team here
+      teamId: user.teamId,   // 👈 attach team here
       versions: [{
         content,
         tags,
@@ -127,6 +127,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
       content: document.content,
       summary: document.summary,
       tags: document.tags,
+      teamId : document.teamId,
       updatedBy: userId,
       updatedAt: new Date()
     });

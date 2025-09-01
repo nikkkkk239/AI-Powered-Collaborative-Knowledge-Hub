@@ -88,6 +88,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        localStorage.clear();
         set({ user: null, token: null });
       },
       createTeam : async(data : {name : string , description?:string})=>{
@@ -105,8 +106,8 @@ export const useAuthStore = create<AuthState>()(
             const error = await response.json();
             throw new Error(error.message);
           }
-          const team = await response.json();
-          set({ team });
+          const res = await response.json();
+          set({ team : res.team , user : res.user });
 
         } catch (error) {
             console.log("Error in handleCreateTeam : " , error);
@@ -131,7 +132,7 @@ export const useAuthStore = create<AuthState>()(
           }
 
           const res = await response.json();
-          set({ team : res.team });
+          set({ team : res.team , user: res.user });
         } catch (error : any) {
           console.log("Error in joinTeam :" , error);
           toast.error("Failed to join team");

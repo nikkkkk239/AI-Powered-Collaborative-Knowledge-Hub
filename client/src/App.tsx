@@ -14,6 +14,8 @@ import { Toaster } from 'react-hot-toast';
 
 function App() {
   const { user,team } = useAuthStore();
+  console.log("User : " , user);
+  console.log("Team :" , team);
   
 
   return (

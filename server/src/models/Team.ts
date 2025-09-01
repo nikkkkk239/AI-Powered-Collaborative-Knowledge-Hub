@@ -1,13 +1,15 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
+export interface TeamMember {
+  user: mongoose.Types.ObjectId;
+  role: "owner" | "admin" | "member";
+}
+
 export interface ITeam extends Document {
   name: string;
   description?: string;
   owner: mongoose.Types.ObjectId; // user who created the team
-  members: {
-    user: mongoose.Types.ObjectId;
-    role: "owner" | "admin" | "member";
-  }[];
+  members: TeamMember[];
   createdAt: Date;
   updatedAt: Date;
 }

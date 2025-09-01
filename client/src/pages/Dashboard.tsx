@@ -38,7 +38,6 @@ export const Dashboard: React.FC = () => {
   }, [token, searchQuery, selectedTags]);
 
   useEffect(() => {
-    // Extract all unique tags
     const tags = new Set<string>();
     documents.forEach(doc => {
       doc.tags.forEach(tag => tags.add(tag));
@@ -61,7 +60,6 @@ export const Dashboard: React.FC = () => {
       alert('Please add your Gemini API key in profile settings to use AI features.');
       return;
     }
-
     try {
       const doc = documents.find(d => d._id === id);
       if (doc) {

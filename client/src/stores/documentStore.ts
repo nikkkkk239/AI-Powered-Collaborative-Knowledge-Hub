@@ -67,7 +67,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       if (!response.ok) throw new Error('Failed to fetch documents');
 
       const data = await response.json();
+      
       set({ documents: data.documents });
+      console.log("Documents : " , get().documents);
     } finally {
       set({ isLoading: false });
     }

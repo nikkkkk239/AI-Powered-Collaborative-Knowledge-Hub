@@ -27,7 +27,7 @@ const userSchema = new Schema<IUser>({
     required: true,
     minlength: 6
   },
-    teamId: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },
+    teamId: { type: mongoose.Schema.Types.ObjectId, ref: "Team" , default : null},
   name: {
     type: String,
     required: true,

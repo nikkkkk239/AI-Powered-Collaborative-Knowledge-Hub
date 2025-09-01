@@ -2,11 +2,21 @@
 import { Request, Response } from "express";
 import Team from "../models/Team";
 import User from "../models/User";
+import { IUser } from "../models/User";
+import { ObjectId } from "mongoose";
 
-export const createTeam = async (req: Request, res: Response) => {
+interface AuthRequest extends Request {
+  user: IUser & {_id : ObjectId};
+}
+
+
+export const createTeam = async (req: AuthRequest, res: Response) => {
   try {
     const { name, description } = req.body;
-    const userId = req.user._id; // from auth middleware
+    const userId = (req.user as any)._id; // from auth middleware
+
+    const user = await User.findById(userId);
+    if(!user) return res.status(404).json({message: "User not found."});
 
     const team = await Team.create({
       name,
@@ -15,16 +25,19 @@ export const createTeam = async (req: Request, res: Response) => {
       members: [{ user: userId, role: "owner" }],
     });
 
-    res.status(201).json(team);
+    (user as any).teamId = team._id;
+    await user.save();
+
+    res.status(201).json({team , user});
   } catch (err) {
     res.status(500).json({ message: "Error creating team", error: err });
   }
 };
 
 // GET /api/teams
-export const getUserTeams = async (req: Request, res: Response) => {
+export const getUserTeams = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user._id;
+    const userId = req?.user?._id;
 
     const user = await User.findById(userId);
     if(!user){
@@ -43,24 +56,32 @@ export const getUserTeams = async (req: Request, res: Response) => {
 };
 
 // POST /api/teams/:teamId/members
-export const joinTeam = async (req: Request, res: Response) => {
+export const joinTeam = async (req: AuthRequest, res: Response) => {
   try {
     const { teamId } = req.params;
-    const userId = req.user._id; // logged-in user
+    const userId = req?.user?._id; // logged-in user
+    
 
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ message: "Team not found" });
+
+    const user = await User.findById(userId);
+    if(!user){
+      return res.status(404).json({message : "User not found."});
+    }
 
     // check if already in team
     if (team.members.some(m => m.user.toString() === userId.toString())) {
       return res.status(400).json({ message: "You are already a member of this team" });
     }
-
+    (user as any).teamId = team._id;
+    await user.save();
     // default role = "member"
-    team.members.push({ user: userId, role: "member" });
+    team.members.push({ user: userId as any, role: "member" });
+    
     await team.save();
 
-    res.json({ message: "Joined team successfully", team });
+    res.json({ message: "Joined team successfully", team , user});
   } catch (err) {
     console.log("Error in joinTeam : " , err);
     res.status(500).json({ message: "Error joining team", error: err });
@@ -69,10 +90,10 @@ export const joinTeam = async (req: Request, res: Response) => {
 
 
 // DELETE /api/teams/:teamId/members/:memberId
-export const removeMember = async (req: Request, res: Response) => {
+export const removeMember = async (req: AuthRequest, res: Response) => {
   try {
     const { teamId, memberId } = req.params;
-    const requesterId = req.user._id;
+    const requesterId = req?.user?._id;
 
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ message: "Team not found" });
@@ -95,10 +116,10 @@ export const removeMember = async (req: Request, res: Response) => {
 };
 
 // DELETE /api/teams/:teamId
-export const deleteTeam = async (req: Request, res: Response) => {
+export const deleteTeam = async (req: AuthRequest, res: Response) => {
   try {
     const { teamId } = req.params;
-    const requesterId = req.user._id;
+    const requesterId = req?.user?._id;
 
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ message: "Team not found" });

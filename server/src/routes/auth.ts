@@ -17,7 +17,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Create user
-    const user = new User({ email, password, name });
+    const user = new User({ email, password, name  });
     await user.save();
 
     // Generate token
@@ -34,7 +34,8 @@ router.post('/register', async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
-        hasGeminiKey: !!user.geminiApiKey
+        hasGeminiKey: !!user.geminiApiKey,
+        teamId : null
       }
     });
   } catch (error: any) {
@@ -74,6 +75,7 @@ router.post('/login', async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
+        teamId : user.teamId,
         hasGeminiKey: !!user.geminiApiKey
       }
     });

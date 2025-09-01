@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Save, Sparkles, Tag, ArrowLeft } from 'lucide-react';
+import { Save, Sparkles, Tag, ArrowLeft , X} from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuthStore } from '../stores/authStore';
 import { useDocumentStore } from '../stores/documentStore';
 import { useAIStore } from '../stores/aiStore';
+import toast from 'react-hot-toast';
 
 export const DocumentForm: React.FC = () => {
   const navigate = useNavigate();
@@ -51,7 +52,7 @@ export const DocumentForm: React.FC = () => {
       }
       navigate('/dashboard');
     } catch (error: any) {
-      alert(error.message);
+      toast.error(error.message);
     }
   };
 

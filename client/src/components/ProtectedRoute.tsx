@@ -12,7 +12,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   if (!user || !token) {
     return <Navigate to="/login" replace />;
   }
-  if(team){
+  if(!team){
     return <Navigate to="/joinTeam" replace />;
 
   }
