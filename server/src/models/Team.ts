@@ -5,6 +5,13 @@ export interface TeamMember {
   role: "owner" | "admin" | "member";
 }
 
+export interface RecentActivity{
+  user : mongoose.Types.ObjectId;
+  activityType : "update" | "create" | "delete";
+  date : Date;
+  docName : string;
+}
+
 export interface ITeam extends Document {
   name: string;
   description?: string;
@@ -12,6 +19,7 @@ export interface ITeam extends Document {
   members: TeamMember[];
   createdAt: Date;
   updatedAt: Date;
+  recentActivities : RecentActivity[];
 }
 
 const teamSchema = new Schema<ITeam>(
@@ -40,6 +48,25 @@ const teamSchema = new Schema<ITeam>(
         },
       },
     ],
+    recentActivities:[
+      {
+        docName : {
+          type:String,
+          required:true,
+        },
+        user : {type:mongoose.Types.ObjectId , ref:"User" , required:true},
+        activityType : {
+          type:String,
+          enum : ["update" , "create" , "delete"],
+          default : "update"
+        },
+        date : {
+          type:Date,
+          default:Date.now(),
+        }
+
+      }
+    ]
   },
   { timestamps: true }
 );

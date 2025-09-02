@@ -4,6 +4,7 @@ import User from '../models/User';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { ObjectId } from 'mongoose';
 import rateLimit from 'express-rate-limit';
+import Team from '../models/Team';
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
@@ -67,7 +68,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
   try {
     const document = await Document.findById(req.params.id)
       .populate('createdBy', 'name email')
-      .populate('versions.updatedBy', 'name email');
+      .populate('versions.updatedBy','name email');
 
     if (!document) {
       return res.status(404).json({ message: 'Document not found' });
@@ -100,14 +101,25 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       createdBy: user._id,
       summary : summary ? summary : "",
       teamId: user.teamId,   // 👈 attach team here
-      versions: [{
-        content,
-        tags,
-        updatedBy: user._id,
-        updatedAt: new Date()
-      }]
+      versions: []
     });
+    const team = await Team.findById(user.teamId);
 
+    if(!team){
+      return res.status(404).json({message : "Team Not Found."});
+    }
+
+    team.recentActivities.push({
+      docName : title,
+      activityType : "create",
+      user:user._id,
+    })
+
+    if (team.recentActivities.length > 5) {
+      team.recentActivities = team.recentActivities.slice(-5);
+    }
+
+    await team.save();
     await document.save();
     await document.populate('createdBy', 'name email');
 
@@ -145,11 +157,32 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
       updatedAt: new Date()
     });
 
+    if (document.versions.length > 5) {
+      document.versions = document.versions.slice(-5);
+    }
+
     // Update document
     document.title = title || document.title;
     document.content = content || document.content;
     document.tags = tags || document.tags;
     document.summary = summary || document.summary;
+
+    const team = await Team.findById(user.teamId);
+
+    if(!team){
+      return res.status(404).json({message : "Team Not Found."});
+    }
+
+    team.recentActivities.push({
+      docName:title || document.title,
+      activityType : "update",
+      user:user._id,
+    })
+
+    if (team.recentActivities.length > 5) {
+      team.recentActivities = team.recentActivities.slice(-5);
+    }
+    await team.save();
 
     await document.save();
     await document.populate('createdBy', 'name email');
@@ -171,11 +204,26 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
       return res.status(404).json({ message: 'Document not found' });
     }
 
-
-    // Check permissions
     if (document.teamId.toString() !== req.user!.teamId.toString()) {
         return res.status(403).json({ message: "Not in your team" });
     }
+
+    const team = await Team.findById(user.teamId);
+
+    if(!team){
+      return res.status(404).json({message : "Team Not Found."});
+    }
+
+    team.recentActivities.push({
+      docName : document.title,
+      activityType : "delete",
+      user:user._id,
+    })
+
+    if (team.recentActivities.length > 5) {
+      team.recentActivities = team.recentActivities.slice(-5);
+    }
+    await team.save();
 
     await Document.findByIdAndDelete(req.params.id);
     res.json({ message: 'Document deleted successfully' });
@@ -187,13 +235,12 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
 // Get recent activity
 router.get('/activity/recent', authenticate, async (req: AuthRequest, res) => {
   try {
-    const recentDocs = await Document.find({teamId : req.user?.teamId})
-      .populate('createdBy', 'name email')
-      .sort({ updatedAt: -1 })
-      .limit(5)
-      .select('title updatedAt createdBy');
+      const team = await Team.findById(req?.user?.teamId).populate("recentActivities.user", "name email");
+      if(!team){
+        return res.status(404).json({message : "Team Not Found."});
+      }
 
-    res.json(recentDocs);
+    res.json({recentActivity : team.recentActivities});
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { User } from './authStore';
 
 interface Document {
   _id: string;
@@ -28,10 +29,17 @@ interface Document {
   }>;
 }
 
+interface Activity{
+  docName : string;
+  date : Date;
+  user:User,
+  activityType : "create" | "delete" | "update";
+}
+
 interface DocumentState {
   documents: Document[];
   currentDocument: Document | null;
-  recentActivity: Document[];
+  recentActivity: Activity[];
   isLoading: boolean;
   searchQuery: string;
   selectedTags: string[];
@@ -158,8 +166,8 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 
       if (!response.ok) throw new Error('Failed to fetch recent activity');
 
-      const recentActivity = await response.json();
-      set({ recentActivity });
+      const res = await response.json();
+      set({ recentActivity : res.recentActivity });
     } catch (error) {
       console.error('Error fetching recent activity:', error);
     }

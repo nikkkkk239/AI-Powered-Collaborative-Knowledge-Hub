@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Filter,FileText, X } from 'lucide-react';
+import { useDebounce } from "use-debounce"; 
+
+import { Plus, Filter,FileText, X, Edit, DeleteIcon, Delete, LucideDelete, Trash } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { DocumentCard } from '../components/DocumentCard';
 import { useAuthStore } from '../stores/authStore';
@@ -27,16 +29,17 @@ export const Dashboard: React.FC = () => {
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch] = useDebounce(searchInput, 500);
 
   useEffect(() => {
     if (token) {
       fetchDocuments(token, {
-        search: searchQuery,
-        tags: selectedTags.join(',')
+        search: debouncedSearch.trim() , // undefined means "no filter"
+        tags: selectedTags.join(","),
       });
       fetchRecentActivity(token);
     }
-  }, [token, searchQuery, selectedTags]);
+  }, [token, debouncedSearch, selectedTags]);
 
   useEffect(() => {
     const tags = new Set<string>();
@@ -55,11 +58,11 @@ export const Dashboard: React.FC = () => {
       }
     }
   };
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-  if (e.key === "Enter") {
-    setSearchQuery(searchInput); // update store only when Enter is pressed
-  }
-};
+//   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+//   if (e.key === "Enter" ) {
+//     setSearchQuery(searchInput); // update store only when Enter is pressed
+//   }
+// };
 
   const handleSummarize = async (id: string) => {
     if (!user?.hasGeminiKey) {
@@ -134,49 +137,74 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Search documents..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-            >
-              <Filter className="h-4 w-4" />
-              <span>Tags</span>
-            </button>
-          </div>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+  {/* Search + Filter */}
+  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+    {/* Search Input */}
+    <div className="relative flex-1">
+      <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z"
+          />
+        </svg>
+      </span>
+      <input
+        type="text"
+        placeholder="Search documents..."
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        // onKeyDown={handleSearchKeyDown}
+        className="w-full pl-10 pr-4 py-2.5 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm"
+      />
+    </div>
 
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="flex flex-wrap gap-2">
-                {availableTags.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => toggleTag(tag)}
-                    className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-sm transition-colors ${
-                      selectedTags.includes(tag)
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <span>{tag}</span>
-                    {selectedTags.includes(tag) && <X className="h-3 w-3" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+    {/* Filter Button */}
+    <button
+      onClick={() => setShowFilters(!showFilters)}
+      className={`inline-flex max-w-[100px] items-center cursor-pointer gap-2 px-4 py-2 rounded-full text-sm font-medium justify-center transition-all shadow-sm ${
+        showFilters
+          ? "bg-blue-500 text-white hover:bg-blue-600"
+          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+      }`}
+    >
+      <Filter className="h-4 w-4" />
+      <span>Tags</span>
+    </button>
+  </div>
+
+  {/* Tag Filters */}
+  {showFilters && (
+    <div className="mt-5 pt-5 border-t border-gray-200">
+      <div className="flex flex-wrap gap-2">
+        {availableTags.map((tag) => (
+          <button
+            key={tag}
+            onClick={() => toggleTag(tag)}
+            className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-sm ${
+              selectedTags.includes(tag)
+                ? "bg-blue-100 text-blue-800 border border-blue-200"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+            }`}
+          >
+            <span>{tag}</span>
+            {selectedTags.includes(tag) && <X className="h-3 w-3" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Documents */}
@@ -217,26 +245,60 @@ export const Dashboard: React.FC = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Team Activity */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-              <div className="space-y-3">
-                {recentActivity.map(doc => (
-                  <div key={doc._id} className="flex items-start space-x-3">
-                    <FileText className="h-4 w-4 text-gray-400 mt-1" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {doc.title}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        by {doc.createdBy.name} • {new Date(doc.updatedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+  {/* Team Activity */}
+  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <h3 className="text-lg font-semibold text-gray-900 mb-6">Recent Activity</h3>
+
+    <div className="space-y-4">
+      {recentActivity.map((doc, i) => {
+        const iconStyles =
+          doc.activityType === "create"
+            ? "bg-green-100 text-green-600"
+            : doc.activityType === "update"
+            ? "bg-blue-100 text-blue-600"
+            : "bg-red-100 text-red-600";
+
+        const Icon =
+          doc.activityType === "create"
+            ? FileText
+            : doc.activityType === "update"
+            ? Edit
+            : Trash;
+
+        return (
+          <div
+            key={i}
+            className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition"
+          >
+            {/* Icon */}
+            <div
+              className={`flex-shrink-0 p-2 rounded-lg ${iconStyles} shadow-sm`}
+            >
+              <Icon className="h-4 w-4" />
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 break-words">
+                <span className="font-semibold">{doc.docName}</span>{" "}
+                {doc.activityType === "create"
+                  ? "was created"
+                  : doc.activityType === "update"
+                  ? "was updated"
+                  : "was deleted"}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                by <span className="font-medium">{doc.user.name}</span> •{" "}
+                {new Date(doc.date).toLocaleString()}
+              </p>
             </div>
           </div>
+        );
+      })}
+    </div>
+  </div>
+</div>
+
         </div>
       </div>
     </Layout>
