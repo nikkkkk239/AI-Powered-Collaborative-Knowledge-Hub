@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 
 import teamRoutes from "./routes/teams"
 import authRoutes from './routes/auth';
+import qandaRoutes from "./routes/q&a"
 import documentRoutes from './routes/documents';
 import userRoutes from './routes/users';
 import aiRoutes from './routes/ai';
@@ -40,6 +41,7 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
 app.use("/api/team" , teamRoutes);
+app.use("/api/q&a" , qandaRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

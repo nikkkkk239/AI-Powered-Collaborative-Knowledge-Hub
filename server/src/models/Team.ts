@@ -54,7 +54,7 @@ const teamSchema = new Schema<ITeam>(
           type:String,
           required:true,
         },
-        user : {type:mongoose.Types.ObjectId , ref:"User" , required:true},
+        user : {type:Schema.Types.ObjectId , ref:"User" , required:true},
         activityType : {
           type:String,
           enum : ["update" , "create" , "delete"],
@@ -64,9 +64,9 @@ const teamSchema = new Schema<ITeam>(
           type:Date,
           default:Date.now(),
         }
-
       }
-    ]
+    ],
+    
   },
   { timestamps: true }
 );

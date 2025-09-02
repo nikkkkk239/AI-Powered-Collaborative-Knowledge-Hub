@@ -107,15 +107,24 @@ export const removeMember = async (req: AuthRequest, res: Response) => {
     if (!team) return res.status(404).json({ message: "Team not found" });
 
     // only owner or admin can remove members
-    const requester = team.members.find(m => m.user.toString() === requesterId.toString());
-    if (!requester || !["owner", "admin"].includes(requester.role)) {
-      return res.status(403).json({ message: "Not authorized" });
+    if(team.owner._id.toString() != requesterId.toString()){
+      return res.status(403).json({message : "Not the owner of the Team."})
     }
+    
+    const user = await User.findById(memberId);
+    if(!user){
+      return res.status(404).json({message : "Member Not Found."});
+    }
+    user.teamId = null;
+    await user.save();
 
-    team.members = team.members.filter(m => m.user.toString() !== memberId);
+    team.members = team.members.filter(m => m.user.toString() !== memberId.toString());
     await team.save();
+    const updatedTeam = await Team.findById(teamId)
+      .populate("members.user", "name email") // populate only needed fields
+      .populate("owner", "name email");
 
-    res.json(team);
+    res.json({team : updatedTeam});
   } catch (err) {
     console.log("Error in removeMember : " , err);
 

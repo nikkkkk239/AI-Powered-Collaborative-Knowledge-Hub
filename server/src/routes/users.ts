@@ -1,7 +1,7 @@
 import express from 'express';
 import User from '../models/User';
 import { authenticate, AuthRequest } from '../middleware/auth';
-
+import fetch from "node-fetch";
 const router = express.Router();
 
 // Update user profile
@@ -12,7 +12,24 @@ router.put('/profile', authenticate, async (req: AuthRequest, res) => {
 
     const updateData: any = {};
     if (name) updateData.name = name;
-    if (geminiApiKey !== undefined) updateData.geminiApiKey = geminiApiKey;
+
+    // Validate Gemini key if provided
+    if (geminiApiKey !== undefined) {
+      const testUrl = `https://generativelanguage.googleapis.com/v1/models?key=${geminiApiKey}`;
+
+      try {
+        const response = await fetch(testUrl);
+        if (!response.ok) {
+          const errorData = await response.json();
+          return res.status(400).json({
+            message: (errorData as any).error?.message || "Invalid Gemini API key",
+          });
+        }
+        updateData.geminiApiKey = geminiApiKey;
+      } catch (err: any) {
+        return res.status(500).json({ message: "Error validating Gemini key: " + err.message });
+      }
+    }
 
     const user = await User.findByIdAndUpdate(
       userId,
@@ -29,7 +46,8 @@ router.put('/profile', authenticate, async (req: AuthRequest, res) => {
       email: user.email,
       name: user.name,
       role: user.role,
-      hasGeminiKey: !!user.geminiApiKey
+      hasGeminiKey: !!user.geminiApiKey,
+      teamId: user.teamId,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

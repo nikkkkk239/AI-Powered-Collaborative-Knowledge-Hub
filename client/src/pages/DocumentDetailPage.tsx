@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Dialog } from "@headlessui/react"; 
+import { X } from "lucide-react";
 import { useAuthStore } from "../stores/authStore";
 import { MoveLeftIcon, Sparkles, Tag } from "lucide-react";
 
@@ -11,6 +13,7 @@ const DocumentDetailsPage = () => {
   const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<any | null>(null);
   const [editForm, setEditForm] = useState({
     title: "",
     content: "",
@@ -103,8 +106,12 @@ const DocumentDetailsPage = () => {
       JSON.stringify(editForm.tags) !== JSON.stringify(document.tags || [])
     );
   }, [editForm, document]);
+  console.log(selectedVersion);
 
-  if (loading) return <div className="p-6 text-gray-600">Loading...</div>;
+  if (loading) return <div className="text-center min-h-[100vh] flex min-w-[100vw] gap-5 items-center justify-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 "></div>
+                <p className=" text-gray-600">Loading...</p>
+              </div>;
   if (!document) return <div className="p-6 text-red-600">Document not found</div>;
 
   return (
@@ -245,28 +252,105 @@ const DocumentDetailsPage = () => {
 
       {/* Versions */}
       {document.versions?.length > 0 && (
-        <div className="bg-white shadow-sm rounded-xl p-6 border border-gray-200 mb-6">
-          <h2 className="text-xl font-semibold mb-3">Version History</h2>
-          <ul className="space-y-2">
-            {document.versions.map((v: any, i: number) => (
-              <li
-                key={i}
-                className="flex justify-between items-center border-b pb-2"
-              >
-                <span className="text-gray-700">
-                  (saved on {new Date(v.updatedAt).toLocaleString()})
-                </span>
-                <button
-                  className="text-sm text-blue-600 hover:underline"
-                  onClick={() => setDocument({ ...document, ...v })}
-                >
-                  View
-                </button>
-              </li>
-            ))}
-          </ul>
+  <div className="bg-white shadow-sm rounded-xl p-6 border border-gray-200 mb-6">
+    <h2 className="text-xl font-semibold mb-3">Version History</h2>
+
+    {/* Horizontal Scroll */}
+    <div className="flex gap-4 overflow-x-auto pb-2">
+      {document.versions.map((v: any, i: number) => (
+        <div
+          key={i}
+          onClick={() => setSelectedVersion(v)}
+          className="min-w-[250px] cursor-pointer bg-gray-50 border rounded-xl shadow-sm p-4 hover:shadow-md transition-all"
+        >
+          <p className="text-sm text-gray-700 font-medium">
+            {new Date(v.updatedAt).toLocaleString()}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Updated by: {v.updatedBy?.name || "Unknown"}
+          </p>
+          <p className="text-xs text-gray-600 mt-2 line-clamp-2">
+            {v.summary || "No summary"}
+          </p>
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+)}
+
+{/* Modal for Version Details */}
+{selectedVersion && (
+  <Dialog
+    open={!!selectedVersion}
+    onClose={() => setSelectedVersion(null)}
+    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+  >
+    {/* Background Overlay */}
+    <div 
+  className="fixed inset-0 bg-black/40 backdrop-blur-sm" 
+  aria-hidden="true" 
+/>
+
+    <div className="relative bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl overflow-y-auto max-h-[90vh]">
+      {/* Close Button */}
+      <button
+        onClick={() => setSelectedVersion(null)}
+        className="absolute top-4 right-4 cursor-pointer text-gray-500 hover:text-gray-800"
+      >
+        <X className="h-6 w-6" />
+      </button>
+
+      <h3 className="text-xl font-semibold mb-4">Version Details</h3>
+
+      <p className="text-sm text-gray-600 mb-2">
+        Updated on:{" "}
+        <span className="font-medium">
+          {new Date(selectedVersion.updatedAt).toLocaleString()}
+        </span>
+      </p>
+
+      <p className="text-sm text-gray-600 mb-4">
+        Updated by:{" "}
+        <span className="font-medium">
+          {selectedVersion.updatedBy?.name || "Unknown"} (
+          {selectedVersion.updatedBy?.email || "No email"})
+        </span>
+      </p>
+
+      <div className="mb-4">
+        <h4 className="text-lg font-medium">Summary</h4>
+        <p className="text-gray-700 italic">
+          {selectedVersion.summary || "No summary"}
+        </p>
+      </div>
+
+      <div className="mb-4">
+        <h4 className="text-lg font-medium">Tags</h4>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {selectedVersion.tags?.length > 0 ? (
+            selectedVersion.tags.map((tag: string, i: number) => (
+              <span
+                key={i}
+                className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs"
+              >
+                {tag}
+              </span>
+            ))
+          ) : (
+            <p className="text-gray-500 text-sm">No tags</p>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <h4 className="text-lg font-medium mb-2">Content</h4>
+        <p className="text-gray-800 whitespace-pre-wrap">
+          {selectedVersion.content}
+        </p>
+      </div>
+    </div>
+  </Dialog>
+)}
 
       {/* AI Actions */}
       {editing && <div className="flex flex-col gap-2">

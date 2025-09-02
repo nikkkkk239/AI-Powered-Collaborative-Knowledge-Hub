@@ -139,6 +139,7 @@ router.post('/qa', authenticate, async (req: AuthRequest, res) => {
 
     res.json({ answer, question });
   } catch (error: any) {
+    console.log("Error in question asking : " ,error);
     res.status(500).json({ message: error.message });
   }
 });

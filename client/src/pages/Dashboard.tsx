@@ -21,6 +21,7 @@ export const Dashboard: React.FC = () => {
     fetchDocuments, 
     deleteDocument, 
     fetchRecentActivity,
+    fetchingRecent,
     setSelectedTags,
     setSearchQuery
   } = useDocumentStore();
@@ -186,7 +187,7 @@ export const Dashboard: React.FC = () => {
   {showFilters && (
     <div className="mt-5 pt-5 border-t border-gray-200">
       <div className="flex flex-wrap gap-2">
-        {availableTags.map((tag) => (
+        {availableTags.length == 0 ? <div className='text-sm text-black/50'>No tags available</div> : availableTags.map((tag) => (
           <button
             key={tag}
             onClick={() => toggleTag(tag)}
@@ -250,7 +251,10 @@ export const Dashboard: React.FC = () => {
     <h3 className="text-lg font-semibold text-gray-900 mb-6">Recent Activity</h3>
 
     <div className="space-y-4">
-      {recentActivity.map((doc, i) => {
+      {fetchingRecent ? <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading activities...</p>
+              </div> : recentActivity.map((doc, i) => {
         const iconStyles =
           doc.activityType === "create"
             ? "bg-green-100 text-green-600"

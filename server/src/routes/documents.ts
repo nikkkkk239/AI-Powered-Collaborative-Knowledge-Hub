@@ -185,7 +185,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
     await team.save();
 
     await document.save();
-    await document.populate('createdBy', 'name email');
+    await document.populate('versions.updatedBy','name email');
 
     res.json(document);
   } catch (error: any) {

@@ -1,21 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MessageCircle, Send, Bot, User } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuthStore } from '../stores/authStore';
-import { useAIStore } from '../stores/aiStore';
 
-interface QAItem {
-  question: string;
-  answer: string;
-  timestamp: Date;
-}
+import { useAIStore } from '../stores/aiStore';
+import { useQAStore } from '../stores/qastore';
+
+
 
 export const QA: React.FC = () => {
   const { token, user } = useAuthStore();
-  const { askQuestion, isProcessing } = useAIStore();
+  const { askQuestion, isProcessing,fetchQuestions , qaList} = useQAStore();
+  const [loading , setLoading] = useState(true);
+
+  useEffect(()=>{
+    const func = async ()=>{
+      await fetchQuestions(token!);
+      setLoading(false);
+    }
+    func();
+  },[fetchQuestions])
   
   const [question, setQuestion] = useState('');
-  const [qaHistory, setQAHistory] = useState<QAItem[]>([]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,17 +38,22 @@ export const QA: React.FC = () => {
     setQuestion('');
 
     try {
-      const answer = await askQuestion(token!, currentQuestion);
-      const newQA: QAItem = {
-        question: currentQuestion,
-        answer,
-        timestamp: new Date()
-      };
-      setQAHistory(prev => [newQA, ...prev]);
+      await askQuestion( currentQuestion,token!);
     } catch (error: any) {
       alert(error.message);
     }
   };
+
+  function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
   return (
     <Layout>
@@ -103,44 +115,63 @@ export const QA: React.FC = () => {
         </div>
 
         {/* Q&A History */}
-        {qaHistory.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Questions</h2>
-            
-            {qaHistory.map((qa, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-                {/* Question */}
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <User className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 mb-1">You asked:</p>
-                    <p className="text-gray-700">{qa.question}</p>
-                  </div>
-                  <span className="text-xs text-gray-500">
-                    {qa.timestamp.toLocaleTimeString()}
-                  </span>
-                </div>
+        {qaList.length > 0 && (
+        <div className="space-y-6">
+          <h2 className="text-xl font-bold text-gray-900">Recent Questions</h2>
 
-                {/* Answer */}
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Bot className="h-4 w-4 text-purple-600" />
+          {qaList.map((qa, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-all duration-200"
+            >
+              {/* Header: User + Date */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                    <User className="h-5 w-5 text-blue-600" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 mb-1">AI answered:</p>
-                    <div className="prose prose-sm max-w-none">
-                      <p className="text-gray-700 whitespace-pre-wrap">{qa.answer}</p>
-                    </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {qa.createdBy?.name || "Anonymous"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatDate(qa.createdAt!)}
+                    </p>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        {qaHistory.length === 0 && (
+              {/* Question */}
+              <div className="mb-4 border-l-4 border-blue-500 pl-3">
+
+                <p className="text-gray-700">{qa.question}</p>
+              </div>
+
+              {/* Answer */}
+              <div className="flex items-start space-x-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                  <Bot className="h-5 w-5 text-purple-600" />
+                </div>
+                <div className="flex-1 bg-gray-50 rounded-xl p-4">
+                  <p className="text-sm font-medium text-gray-900 mb-1">
+                    AI answered:
+                  </p>
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-gray-700 whitespace-pre-wrap">
+                      {qa.answer}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+        {loading ? <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading questions...</p>
+              </div> : qaList.length === 0 && (
           <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
             <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No questions yet</h3>

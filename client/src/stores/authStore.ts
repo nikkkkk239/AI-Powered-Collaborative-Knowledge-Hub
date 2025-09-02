@@ -42,6 +42,7 @@ interface AuthState {
   createTeam : (data:{name : string , description?:string})=>Promise<void>;
   getTeamDetails : ()=>Promise<void>;
   deleteTeam : ()=>Promise<void>;
+  removeMember : (memberId : string)=>Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -196,6 +197,30 @@ export const useAuthStore = create<AuthState>()(
           console.log("Error in deleteTeam Details:" , error);
           toast.error("Fetching Failed.") 
         }
+      },
+      removeMember : async(memberId)=>{
+        const {team, token} = get();
+        try {
+          
+          const response = await fetch(`http://localhost:5000/api/team/${team._id}/members/${memberId}`,{
+            method :"DELETE",
+            headers:{
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            }
+          })
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message);
+          }
+          const res = await response.json();
+
+          set({team : res.team});
+        } catch (error) {
+          console.log("Error in deleteTeam Details:" , error);
+          toast.error("Fetching Failed.") 
+        }
+        // /teams/:teamId/members/:memberId
       },
 
       updateProfile: async (data: { name?: string; geminiApiKey?: string }) => {

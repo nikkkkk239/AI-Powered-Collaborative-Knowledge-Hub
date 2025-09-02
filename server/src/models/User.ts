@@ -8,7 +8,7 @@ export interface IUser extends Document {
   role: 'user' | 'admin';
   geminiApiKey?: string;
   createdAt: Date;
-  teamId : mongoose.Types.ObjectId;
+  teamId : mongoose.Types.ObjectId | null;
 
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;

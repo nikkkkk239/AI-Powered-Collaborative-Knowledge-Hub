@@ -42,6 +42,7 @@ interface DocumentState {
   recentActivity: Activity[];
   isLoading: boolean;
   searchQuery: string;
+  fetchingRecent : boolean;
   selectedTags: string[];
   
   // Actions
@@ -62,6 +63,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   recentActivity: [],
   isLoading: false,
   searchQuery: '',
+  fetchingRecent : true,
   selectedTags: [],
 
   fetchDocuments: async (token: string, params = {}) => {
@@ -170,6 +172,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       set({ recentActivity : res.recentActivity });
     } catch (error) {
       console.error('Error fetching recent activity:', error);
+    }
+    finally{
+      set({fetchingRecent : false})
     }
   },
 

@@ -72,7 +72,7 @@ export const Search: React.FC = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleRegularSearch()}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Search for documents, topics, or ask a question..."
+                placeholder="Search for documents or topics..."
               />
             </div>
             
