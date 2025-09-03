@@ -182,7 +182,7 @@ const handleSummarize = async () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex flex-row items-center gap-5">
-        <MoveLeftIcon className="cursor-pointer" onClick={()=>navigate("/dashboard")}/>
+        <MoveLeftIcon className="cursor-pointer" onClick={()=>navigate(-1)}/>
         {editing ? (
           <input
             type="text"

@@ -17,6 +17,7 @@ export interface IDocument extends Document {
     updatedAt: Date;
     updatedBy: mongoose.Types.ObjectId;
   }>;
+  embedding: number[]
 }
 
 const documentSchema = new Schema<IDocument>({
@@ -51,7 +52,11 @@ const documentSchema = new Schema<IDocument>({
     tags: [{ type: String, trim: true, lowercase: true }],
     updatedAt: { type: Date, default: Date.now },
     updatedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true }
-  }]
+  }],
+  embedding: {
+    type: [Number], // vector
+    index: true,    // good for Atlas vector search
+  },
 }, {
   timestamps: true
 });

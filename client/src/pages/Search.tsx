@@ -3,11 +3,12 @@ import { Search as SearchIcon, Sparkles } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { DocumentCard } from '../components/DocumentCard';
 import { useAuthStore } from '../stores/authStore';
-import { useAIStore } from '../stores/aiStore';
+import { useNavigate } from 'react-router-dom';
 
 export const Search: React.FC = () => {
   const { token, user } = useAuthStore();
-  const { semanticSearch, isProcessing } = useAIStore();
+  const navigate = useNavigate();
+
   
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -23,7 +24,20 @@ export const Search: React.FC = () => {
 
     setIsSearching(true);
     try {
-      const results = await semanticSearch(token!, searchQuery);
+      const response = await fetch("http://localhost:5000/api/ai/search",{
+        method:"POST",
+        headers:{
+           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body:JSON.stringify({body : searchQuery})
+      })
+      if(!response.ok){
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+      const results = await response.json();
+      console.log("Results : " , results);
       setSearchResults(results);
     } catch (error: any) {
       alert(error.message);
@@ -110,15 +124,15 @@ export const Search: React.FC = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Searching...</p>
           </div>
-        ) : searchResults.length > 0 ? (
+        ) : searchResults?.length > 0 ? (
           <div className="space-y-6">
             <h2 className="text-lg font-semibold text-gray-900">
-              Search Results ({searchResults.length})
+              Search Results ({searchResults?.length})
             </h2>
             <div className="grid gap-6">
-              {searchResults.map(document => (
+              {searchResults?.map(document => (
                 <DocumentCard
-                  key={document._id}
+                  key={document?._id}
                   document={document}
                   onEdit={(id) => navigate(`/documents/${id}/edit`)}
                   onDelete={() => {}}

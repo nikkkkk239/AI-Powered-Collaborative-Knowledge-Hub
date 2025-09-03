@@ -12,7 +12,7 @@ async function getAvailableModels(apiKey: string): Promise<string[]> {
     }
   );
 
-  const data = await response.json();
+  const data:any = await response.json();
   if (data.error) {
     console.error("Error fetching models:", data.error);
     return [];
@@ -53,7 +53,7 @@ export async function callGemini(apiKey: string, prompt: string): Promise<string
     }
   );
 
-  const data = await response.json();
+  const data:any = await response.json();
   console.log("Gemini response:", data);
 
   if (data.error) {

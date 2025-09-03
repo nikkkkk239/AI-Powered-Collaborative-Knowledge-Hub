@@ -5,6 +5,7 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 import { ObjectId } from 'mongoose';
 import rateLimit from 'express-rate-limit';
 import Team from '../models/Team';
+import { getEmbedding } from '../lib/embedding';
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
@@ -41,7 +42,7 @@ router.get('/' , limiter, authenticate, async (req: AuthRequest, res) => {
     }
 
     const documents = await Document.find(query)
-      .populate('createdBy', 'name email')
+      .populate('createdBy', 'name email ')
       .sort({ updatedAt: -1 })
       .skip(skip)
       .limit(Number(limit));
@@ -73,7 +74,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
     if (!document) {
       return res.status(404).json({ message: 'Document not found' });
     }
-    if (document.teamId.toString() !== req.user!.teamId.toString()) {
+    if (document.teamId.toString() !== req?.user?.teamId?.toString()) {
         return res.status(403).json({ message: "Not in your team" });
     }
 
@@ -94,6 +95,9 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ message: "User must belong to a team" });
     }
 
+    const embedding = await getEmbedding(process.env.EMBEDDING_KEY!, `${title}\n${content}`);
+
+
     const document = new Document({
       title,
       content,
@@ -101,7 +105,8 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       createdBy: user._id,
       summary : summary ? summary : "",
       teamId: user.teamId,   // 👈 attach team here
-      versions: []
+      versions: [],
+      embedding
     });
     const team = await Team.findById(user.teamId);
 
@@ -143,9 +148,11 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Check permissions
-    if (document.teamId.toString() !== req.user!.teamId.toString()) {
+    if (document.teamId.toString() !== req?.user?.teamId?.toString()) {
         return res.status(403).json({ message: "Not in your team" });
     }
+    const embedding = await getEmbedding(process.env.EMBEDDING_KEY!, `${title}\n${content}`);
+
 
     // Create new version
     document.versions.push({
@@ -166,6 +173,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
     document.content = content || document.content;
     document.tags = tags || document.tags;
     document.summary = summary || document.summary;
+    document.embedding = embedding || document.embedding;
 
     const team = await Team.findById(user.teamId);
 
@@ -204,7 +212,7 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
       return res.status(404).json({ message: 'Document not found' });
     }
 
-    if (document.teamId.toString() !== req.user!.teamId.toString()) {
+    if (document.teamId.toString() !== req?.user?.teamId?.toString()) {
         return res.status(403).json({ message: "Not in your team" });
     }
 
