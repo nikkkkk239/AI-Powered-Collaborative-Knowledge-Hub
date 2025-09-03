@@ -12,6 +12,7 @@ const DocumentDetailsPage = () => {
 
   const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isProcessing , setIsProcessing] = useState(false);
   const [editing, setEditing] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<any | null>(null);
   const [editForm, setEditForm] = useState({
@@ -78,6 +79,67 @@ const DocumentDetailsPage = () => {
       console.error("Delete failed:", err);
     }
   };
+
+  const handleGenerateTags = async () => {
+    setIsProcessing(true);
+
+  try {
+    const res = await fetch(`http://localhost:5000/api/ai/tags/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body:JSON.stringify({content : editForm.content , title:editForm.title})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setEditForm((prev) => ({ ...prev, tags: data.tags }));
+    } else {
+      if (res.status === 503) {
+        alert("Gemini is currently overloaded. Please try again later.");
+      } else {
+        console.error("Summarize failed:", data.message);
+      }
+    }
+  } catch (err) {
+    console.error("Error:", err);
+  }
+  finally{
+    setIsProcessing(false);
+  }
+};
+const handleSummarize = async () => {
+    setIsProcessing(true)
+  try {
+    console.log("click")
+    const res = await fetch(`http://localhost:5000/api/ai/summarize/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ content: editForm.content , title : editForm.title})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setEditForm((prev) => ({ ...prev, summary: data.summary }));
+    } else {
+      if (res.status === 503) {
+        alert("Gemini is currently overloaded. Please try again later.");
+      } else {
+        console.error("Summarize failed:", data.message);
+      }
+    }
+  } catch (err) {
+    console.error("Error:", err);
+  }
+  finally{
+    
+    setIsProcessing(false)
+
+  }
+};
 
   const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && e.currentTarget.value.trim()) {
@@ -251,7 +313,7 @@ const DocumentDetailsPage = () => {
       </div>
 
       {/* Versions */}
-      {document.versions?.length > 0 && (
+      {document.versions?.length > 0 && !editing && (
   <div className="bg-white shadow-sm rounded-xl p-6 border border-gray-200 mb-6">
     <h2 className="text-xl font-semibold mb-3">Version History</h2>
 
@@ -261,7 +323,7 @@ const DocumentDetailsPage = () => {
         <div
           key={i}
           onClick={() => setSelectedVersion(v)}
-          className="min-w-[250px] cursor-pointer bg-gray-50 border rounded-xl shadow-sm p-4 hover:shadow-md transition-all"
+          className="min-w-[250px] max-w-[400px] cursor-pointer bg-gray-50 border rounded-xl shadow-sm p-4 hover:shadow-md transition-all"
         >
           <p className="text-sm text-gray-700 font-medium">
             {new Date(v.updatedAt).toLocaleString()}
@@ -356,14 +418,16 @@ const DocumentDetailsPage = () => {
       {editing && <div className="flex flex-col gap-2">
         <div className="flex flex-row gap-4">
         <button
-          disabled={!user?.hasGeminiKey}
+          disabled={!user?.hasGeminiKey || isProcessing}
+          onClick={handleSummarize}
           className="flex items-center space-x-1 px-3 py-2 text-sm bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <Sparkles className="h-4 w-4" />
           <span>Summarize</span>
         </button>
         <button
-          disabled={!user?.hasGeminiKey}
+          disabled={!user?.hasGeminiKey || isProcessing}
+          onClick={handleGenerateTags}
           className="flex items-center space-x-1 px-3 py-2 text-sm bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <Tag className="h-4 w-4" />

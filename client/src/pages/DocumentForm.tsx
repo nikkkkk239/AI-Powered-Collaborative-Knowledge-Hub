@@ -14,7 +14,7 @@ export const DocumentForm: React.FC = () => {
 
   const { token, user } = useAuthStore();
   const { currentDocument, fetchDocument, createDocument, updateDocument } = useDocumentStore();
-  const { summarizeDocument, generateTags, isProcessing } = useAIStore();
+  const [isProcessing , setIsProcessing] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -81,32 +81,67 @@ export const DocumentForm: React.FC = () => {
   };
 
   const handleSummarize = async () => {
-    if (!user?.hasGeminiKey) {
-      alert('Please add your Gemini API key in profile settings to use AI features.');
-      return;
+    setIsProcessing(true)
+  try {
+    console.log("click")
+    const res = await fetch(`http://localhost:5000/api/ai/summarize/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ content: formData.content , title : formData.title})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setFormData((prev) => ({ ...prev, summary: data.summary }));
+    } else {
+      if (res.status === 503) {
+        alert("Gemini is currently overloaded. Please try again later.");
+      } else {
+        console.error("Summarize failed:", data.message);
+      }
     }
+  } catch (err) {
+    console.error("Error:", err);
+  }
+  finally{
+    
+    setIsProcessing(false)
 
-    try {
-      const summary = await summarizeDocument(token!, formData.content);
-      setFormData(prev => ({ ...prev, summary }));
-    } catch (error: any) {
-      alert(error.message);
-    }
-  };
+  }
+};
 
   const handleGenerateTags = async () => {
-    if (!user?.hasGeminiKey) {
-      alert('Please add your Gemini API key in profile settings to use AI features.');
-      return;
-    }
+    setIsProcessing(true);
 
-    try {
-      const tags = await generateTags(token!, formData.title, formData.content);
-      setFormData(prev => ({ ...prev, tags }));
-    } catch (error: any) {
-      alert(error.message);
+
+  try {
+    const res = await fetch(`http://localhost:5000/api/ai/tags`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body:JSON.stringify({content : formData.content , title:formData.title})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setFormData((prev) => ({ ...prev, tags: data.tags }));
+    } else {
+      if (res.status === 503) {
+        alert("Gemini is currently overloaded. Please try again later.");
+      } else {
+        console.error("Summarize failed:", data.message);
+      }
     }
-  };
+  } catch (err) {
+    console.error("Error:", err);
+  }
+  finally{
+    setIsProcessing(false);
+  }
+};
 
   return (
     <Layout>
@@ -114,7 +149,7 @@ export const DocumentForm: React.FC = () => {
         <div className="mb-6">
           <button
             onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-4"
+            className="inline-flex cursor-pointer items-center space-x-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Dashboard</span>
@@ -170,7 +205,7 @@ export const DocumentForm: React.FC = () => {
                 type="button"
                 onClick={handleSummarize}
                 disabled={!formData.content || isProcessing || !user?.hasGeminiKey}
-                className="inline-flex items-center space-x-1 px-3 py-1 text-sm bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex cursor-pointer items-center space-x-1 px-3 py-1 text-sm bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Sparkles className="h-4 w-4" />
                 <span>AI Summarize</span>
@@ -195,7 +230,7 @@ export const DocumentForm: React.FC = () => {
                 type="button"
                 onClick={handleGenerateTags}
                 disabled={!formData.content || isProcessing || !user?.hasGeminiKey}
-                className="inline-flex items-center space-x-1 px-3 py-1 text-sm bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex cursor-pointer items-center space-x-1 px-3 py-1 text-sm bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Tag className="h-4 w-4" />
                 <span>AI Generate</span>

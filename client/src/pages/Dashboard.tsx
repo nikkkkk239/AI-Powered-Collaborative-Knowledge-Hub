@@ -130,7 +130,7 @@ export const Dashboard: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/documents/new')}
-            className="mt-4 sm:mt-0 inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="mt-4 sm:mt-0 cursor-pointer inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors max-w-[190px] text-center"
           >
             <Plus className="h-4 w-4" />
             <span>New Document</span>

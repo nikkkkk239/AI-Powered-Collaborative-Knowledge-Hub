@@ -153,9 +153,6 @@ export const QA: React.FC = () => {
                   <Bot className="h-5 w-5 text-purple-600" />
                 </div>
                 <div className="flex-1 bg-gray-50 rounded-xl p-4">
-                  <p className="text-sm font-medium text-gray-900 mb-1">
-                    AI answered:
-                  </p>
                   <div className="prose prose-sm max-w-none">
                     <p className="text-gray-700 whitespace-pre-wrap">
                       {qa.answer}
