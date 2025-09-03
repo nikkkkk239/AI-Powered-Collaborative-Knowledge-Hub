@@ -5,6 +5,7 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 import { ObjectId } from 'mongoose';
 import rateLimit from 'express-rate-limit';
 import Team from '../models/Team';
+import redisClient from '../client';
 import { getEmbedding } from '../lib/embedding';
 
 const limiter = rateLimit({
@@ -110,6 +111,9 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
     });
     const team = await Team.findById(user.teamId);
 
+
+    
+
     if(!team){
       return res.status(404).json({message : "Team Not Found."});
     }
@@ -125,8 +129,12 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
     }
 
     await team.save();
+    await team.populate("recentActivities.user", "name email")
+    await redisClient.publish("team:activity",JSON.stringify(team.recentActivities[team.recentActivities.length - 1]));
+
     await document.save();
     await document.populate('createdBy', 'name email');
+    await redisClient.publish("document:new", JSON.stringify(document));
 
     res.status(201).json(document);
   } catch (error: any) {

@@ -13,6 +13,7 @@ import documentRoutes from './routes/documents';
 import userRoutes from './routes/users';
 import aiRoutes from './routes/ai';
 import { errorHandler } from './middleware/errorHandler';
+import { connectRedis } from './client';
 
 dotenv.config();
 
@@ -51,9 +52,9 @@ app.get('/api/health', (req, res) => {
 // Error handling
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+(async () => {
+  await connectRedis(); // ensure Redis is connected before server starts
+})();
+
 
 export default app;

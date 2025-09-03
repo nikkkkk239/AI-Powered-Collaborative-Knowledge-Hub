@@ -16,6 +16,6 @@
     "sourceMap": true,
     "typeRoots": ["./src/types", "./node_modules/@types"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../client/src/hooks"],
   "exclude": ["node_modules", "dist"]
 }
