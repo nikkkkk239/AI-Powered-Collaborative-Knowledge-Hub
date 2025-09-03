@@ -123,7 +123,7 @@ export const Dashboard: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Knowledge Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Docs <span className='text-blue-700'>Dashboard</span></h1>
             <p className="mt-1 text-sm text-gray-600">
               Manage and explore your team's knowledge base
             </p>
@@ -248,7 +248,7 @@ export const Dashboard: React.FC = () => {
           <div className="space-y-6">
   {/* Team Activity */}
   <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-    <h3 className="text-lg font-semibold text-gray-900 mb-6">Recent Activity</h3>
+    <h3 className="text-lg font-semibold text-gray-900 mb-6">Team <span className='text-blue-700'>Activity</span></h3>
 
     <div className="space-y-4">
       {fetchingRecent ? <div className="text-center py-12">

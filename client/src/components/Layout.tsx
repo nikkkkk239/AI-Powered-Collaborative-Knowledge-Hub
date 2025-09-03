@@ -12,6 +12,40 @@ import {
   X,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import BubbleMenu from '../components/BubbleMenu'
+
+const items = [
+  {
+    label: 'Dashboard',
+    href: '/dashboard',
+    ariaLabel: 'Home',
+    rotation: -8,
+    hoverStyles: { bgColor: '#3b82f6', textColor: '#ffffff' }
+  },
+  {
+    label: 'Search',
+    href: '/search',
+    ariaLabel: 'About',
+    rotation: 8,
+    hoverStyles: { bgColor: '#10b981', textColor: '#ffffff' }
+  },
+  {
+    label: 'Q&A',
+    href: '/qa',
+    ariaLabel: 'Projects',
+    rotation: 8,
+    hoverStyles: { bgColor: '#f59e0b', textColor: '#ffffff' }
+  },
+  {
+    label: 'Team',
+    href: '/team',
+    ariaLabel: 'Blog',
+    rotation: 8,
+    hoverStyles: { bgColor: '#ef4444', textColor: '#ffffff' }
+  }
+];
+
+
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -30,17 +64,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen  bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      
+      <header className="bg-white  shadow-sm border-b md:p-4 p-2  border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo + Desktop Nav */}
             <div className="flex items-center space-x-8">
               <Link to="/dashboard" className="flex items-center space-x-2">
-                <FileText className="h-8 w-8 text-blue-600" />
-                <h1 className="text-xl font-bold text-gray-900">
-                  KnowledgeHub
+                <img src="logo.jpg" alt="Logo" className="w-10 h-18 object-cover"/>
+                <h1 className="text-xl text-blue-700 font-bold ">
+                  HiveMind
+                  
                 </h1>
               </Link>
 
@@ -92,12 +128,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </button>
 
               {/* Hamburger */}
-              <button
-                onClick={() => setMobileOpen(!mobileOpen)}
-                className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
+              <div className="md:hidden block">
+              <BubbleMenu
+                logo={<span style={{ fontWeight: 700 }}>RB</span>}
+                items={items}
+                menuAriaLabel="Toggle navigation"
+                menuBg="#ffffff"
+                menuContentColor="#111111"
+                useFixedPosition={false}
+                animationEase="back.out(1.5)"
+                animationDuration={0.5}
+                staggerDelay={0.12}
+              />
+              </div>
             </div>
           </div>
         </div>
