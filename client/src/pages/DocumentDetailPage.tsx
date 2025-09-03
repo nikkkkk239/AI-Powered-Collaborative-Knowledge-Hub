@@ -4,6 +4,7 @@ import { Dialog } from "@headlessui/react";
 import { X } from "lucide-react";
 import { useAuthStore } from "../stores/authStore";
 import { MoveLeftIcon, Sparkles, Tag } from "lucide-react";
+import TextareaAutosize from "react-textarea-autosize";
 
 const DocumentDetailsPage = () => {
   const { documentId } = useParams();
@@ -286,10 +287,10 @@ const handleSummarize = async () => {
       <div className="mb-6">
         <h2 className="text-lg font-semibold mb-2">Summary</h2>
         {editing ? (
-          <textarea
+          <TextareaAutosize minRows={1} maxRows={20}
             value={editForm.summary}
             onChange={(e) => setEditForm({ ...editForm, summary: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg p-2 h-20 focus:outline-none"
+            className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none"
           />
         ) : (
           <p className="text-gray-700 italic">{document.summary || "No summary"}</p>
@@ -300,7 +301,7 @@ const handleSummarize = async () => {
       <div className="bg-white shadow-sm rounded-xl p-6 border border-gray-200 mb-6">
         <h2 className="text-xl font-semibold mb-3">Content</h2>
         {editing ? (
-          <textarea
+          <TextareaAutosize minRows={1} maxRows={50}
             value={editForm.content}
             onChange={(e) =>
               setEditForm({ ...editForm, content: e.target.value })
