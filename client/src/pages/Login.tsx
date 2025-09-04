@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { FileText, Mail, Lock, User } from 'lucide-react';
+import { FileText, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 
 export const Login: React.FC = () => {
@@ -10,6 +10,7 @@ export const Login: React.FC = () => {
     password: '',
     name: ''
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   const { user, login, register, isLoading } = useAuthStore();
@@ -41,27 +42,29 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen animated-bg flex items-center justify-center p-4">
+      <div className="max-w-md w-full space-y-8 animate-[fadeInUp_0.6s_ease]">
         <div className="text-center">
           <div className="flex justify-center">
             <FileText className="h-12 w-12 text-blue-600" />
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+          <h2 className="mt-6 text-3xl font-bold text-white drop-shadow-md">
             {isLogin ? 'Sign in to' : 'Create'} KnowledgeHub
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+
+
+          <p className="mt-2 text-sm text-gray-700">
             {isLogin
-              ? 'Access your team\'s collaborative knowledge base'
-              : 'Join your team\'s knowledge sharing platform'
-            }
+              ? "Access your team's collaborative knowledge base"
+              : "Join your team's knowledge sharing platform"}
           </p>
         </div>
 
-        <div className="bg-white py-8 px-6 shadow-lg rounded-lg">
+        {/* Glassmorphism Card */}
+        <div className="bg-white/70 backdrop-blur-md py-8 px-6 shadow-2xl rounded-2xl border border-white/20">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md animate-shake">
                 {error}
               </div>
             )}
@@ -82,7 +85,8 @@ export const Login: React.FC = () => {
                     required={!isLogin}
                     value={formData.name}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-400 
+                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Full Name"
                   />
                 </div>
@@ -104,7 +108,8 @@ export const Login: React.FC = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-400 
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Email address"
                 />
               </div>
@@ -121,13 +126,21 @@ export const Login: React.FC = () => {
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md placeholder-gray-400 
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Password"
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
             </div>
 
@@ -135,7 +148,11 @@ export const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="group relative w-full flex justify-center py-3 px-4 text-sm font-medium rounded-md text-white cursor-pointer
+                           bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 
+                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 
+                           disabled:opacity-50 disabled:cursor-not-allowed 
+                           transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.97]"
               >
                 {isLoading ? 'Processing...' : (isLogin ? 'Sign in' : 'Create account')}
               </button>
@@ -145,17 +162,32 @@ export const Login: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-blue-600 hover:text-blue-500"
+                className="text-sm text-blue-600 hover:text-blue-500 transition-colors"
               >
                 {isLogin
                   ? "Don't have an account? Sign up"
-                  : 'Already have an account? Sign in'
-                }
+                  : "Already have an account? Sign in"}
               </button>
             </div>
           </form>
         </div>
       </div>
+
+      {/* Extra animations */}
+      <style>{`
+        @keyframes fadeInUp {
+          0% { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-shake {
+          animation: shake 0.3s ease-in-out;
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-6px); }
+          40%, 80% { transform: translateX(6px); }
+        }
+      `}</style>
     </div>
   );
 };

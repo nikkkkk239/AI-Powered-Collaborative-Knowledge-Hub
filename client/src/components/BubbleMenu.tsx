@@ -354,13 +354,14 @@ export default function BubbleMenu({
                     if (el) bubblesRef.current[idx] = el;
                   }}
                   onMouseEnter={(e) => {
-  e.currentTarget.style.background = '#2563eb';
-  e.currentTarget.style.color = 'white';
-}}
-onMouseLeave={(e) => {
-  e.currentTarget.style.background = menuBg;
-  e.currentTarget.style.color = menuContentColor;
-}}
+                    e.currentTarget.style.background = '#2563eb';
+
+                    e.currentTarget.style.color = 'white';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = menuBg;
+                    e.currentTarget.style.color = menuContentColor;
+                  }}
                 >
                   <span
                     className="pill-label inline-block"

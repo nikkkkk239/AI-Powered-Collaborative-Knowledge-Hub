@@ -68,9 +68,9 @@ export const Search: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl slide-down-in mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Search Documents</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Search <span className='text-blue-700'>Documents</span></h1>
           <p className="mt-1 text-sm text-gray-600">
             Find documents using regular text search or AI-powered semantic search
           </p>

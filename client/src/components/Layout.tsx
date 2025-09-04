@@ -64,7 +64,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   return (
-    <div className="min-h-screen  bg-gray-50">
+    <div className="min-h-screen   bg-gray-50">
       {/* Header */}
       
       <header className="bg-white  shadow-sm border-b md:p-4 p-2  border-gray-200">
@@ -73,8 +73,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Logo + Desktop Nav */}
             <div className="flex items-center space-x-8">
               <Link to="/dashboard" className="flex items-center space-x-2">
-                <img src="logo.jpg" alt="Logo" className="w-10 h-18 object-cover"/>
-                <h1 className="text-xl text-blue-700 font-bold ">
+                <img src="logo.jpg" alt="Logo" className="w-10 h-15 object-cover"/>
+                <h1 className="text-2xl text-blue-700 font-bold ">
                   HiveMind
                   
                 </h1>

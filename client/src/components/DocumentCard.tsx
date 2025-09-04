@@ -52,7 +52,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
 
   return (
     <div
-      className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-transform transform hover:scale-[1.02] duration-300 border border-gray-100 cursor-pointer flex flex-col justify-between"
+      className="bg-white slide-left-in shadow-blue-500/10  rounded-2xl shadow-sm hover:shadow-xl transition-transform transform hover:scale-[1.02] duration-300 border border-gray-100 cursor-pointer flex flex-col justify-between"
       onClick={() => navigate(`/document/edit/${document._id}`)}
     >
       <div className="p-6 flex-1 flex flex-col">

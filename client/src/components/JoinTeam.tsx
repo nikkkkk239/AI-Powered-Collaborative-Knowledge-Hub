@@ -46,7 +46,7 @@ const JoinTeam: React.FC = () => {
   },[])
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+    <div className="flex animated-bg items-center justify-center min-h-screen ">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
           {mode === "create" ? "Create a Team" : "Join a Team"}

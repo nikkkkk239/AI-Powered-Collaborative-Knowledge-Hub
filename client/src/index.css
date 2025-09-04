@@ -1,1 +1,154 @@
 @import "tailwindcss";
+
+/* --- Slide In From Top --- */
+@keyframes slide-down-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+@keyframes slide-top-in {
+  0% {
+    opacity: 0;
+    transform: translateY(50px);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* --- Slide In From Left --- */
+@keyframes slide-left-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-50px);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+/* --- Slide In From Right --- */
+@keyframes slide-right-in {
+  0% {
+    opacity: 0;
+    transform: translateX(50px);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+/* --- Base Classes --- */
+.slide-down-in,
+.slide-left-in,
+.slide-right-in ,
+.slide-top-in{
+  --slide-duration: 900ms;
+  --slide-delay: 0ms;
+  --slide-ease: cubic-bezier(.22,1,.36,1);
+  will-change: transform, opacity, filter;
+  animation-fill-mode: both;
+}
+
+/* Assign Animations */
+.slide-down-in {
+  animation: slide-down-in var(--slide-duration) var(--slide-ease) var(--slide-delay);
+}
+.slide-left-in {
+  animation: slide-left-in var(--slide-duration) var(--slide-ease) var(--slide-delay);
+}
+.slide-right-in {
+  animation: slide-right-in var(--slide-duration) var(--slide-ease) var(--slide-delay);
+}
+.slide-top-in {
+  animation: slide-top-in var(--slide-duration) var(--slide-ease) var(--slide-delay);
+}
+
+/* --- Optional stagger for lists --- */
+.stagger > * {
+  animation: inherit;
+}
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 80ms; }
+.stagger > *:nth-child(3) { animation-delay: 160ms; }
+.stagger > *:nth-child(4) { animation-delay: 240ms; }
+
+/* --- Accessibility --- */
+@media (prefers-reduced-motion: reduce) {
+  .slide-down-in, .slide-left-in, .slide-right-in, .stagger > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 500px; /* adjust as needed */
+  }
+}
+@keyframes slide-up {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 500px;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+}
+
+
+.animated-bg {
+  background: linear-gradient(-45deg, #dbeafe, #93c5fd, #ffffff);
+  background-size: 400% 400%;
+  animation: gradientMove 15s ease infinite;
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 4s ease infinite;
+}

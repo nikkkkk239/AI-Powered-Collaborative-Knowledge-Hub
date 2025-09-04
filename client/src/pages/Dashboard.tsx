@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDebounce } from "use-debounce"; 
 
-import { Plus, Filter,FileText, X, Edit, DeleteIcon, Delete, LucideDelete, Trash } from 'lucide-react';
+import { Plus, Filter,FileText, X, Edit, DeleteIcon, Delete, LucideDelete, Trash, MoveLeft, ChevronLeft } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { DocumentCard } from '../components/DocumentCard';
 import { useAuthStore } from '../stores/authStore';
@@ -30,6 +30,7 @@ export const Dashboard: React.FC = () => {
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [searchInput, setSearchInput] = useState("");
+  const [showSidebar , setShowSidebar] = useState(true);
   const [debouncedSearch] = useDebounce(searchInput, 500);
 
   useEffect(() => {
@@ -121,7 +122,7 @@ export const Dashboard: React.FC = () => {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col slide-down-in sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Docs <span className='text-blue-700'>Dashboard</span></h1>
             <p className="mt-1 text-sm text-gray-600">
@@ -130,7 +131,7 @@ export const Dashboard: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/documents/new')}
-            className="mt-4 sm:mt-0 cursor-pointer inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors max-w-[190px] text-center"
+            className="mt-4 sm:mt-0 cursor-pointer inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md shadow-blue-500/50 shadow-lg hover:bg-blue-700 transition-all max-w-[190px] text-center hover:scale-105"
           >
             <Plus className="h-4 w-4" />
             <span>New Document</span>
@@ -138,7 +139,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white transition-all slide-down-in rounded-2xl shadow-sm border border-gray-100 p-6">
   {/* Search + Filter */}
   <div className="flex flex-col sm:flex-row sm:items-center gap-4">
     {/* Search Input */}
@@ -184,7 +185,13 @@ export const Dashboard: React.FC = () => {
   </div>
 
   {/* Tag Filters */}
+  
   {showFilters && (
+    <div
+  className={`overflow-hidden ${
+    showFilters ? "animate-[slide-down_0.7s_ease-out_forwards]" : "animate-[slide-up_0.8s_ease-in_forwards]"
+  }`}
+>
     <div className="mt-5 pt-5 border-t border-gray-200">
       <div className="flex flex-wrap gap-2">
         {availableTags.length == 0 ? <div className='text-sm text-black/50'>No tags available</div> : availableTags.map((tag) => (
@@ -202,6 +209,7 @@ export const Dashboard: React.FC = () => {
           </button>
         ))}
       </div>
+    </div>
     </div>
   )}
 </div>
@@ -245,10 +253,15 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6  slide-right-in">
   {/* Team Activity */}
-  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-    <h3 className="text-lg font-semibold text-gray-900 mb-6">Team <span className='text-blue-700'>Activity</span></h3>
+  <div className="bg-white rounded-2xl shadow-sm shadow-blue-500/10 hover:shadow-lg transition-all duration-200 hover:scale-105 border border-gray-100 p-6 ">
+    <div className='flex w-full items-center justify-between mb-6'>
+      <h3 className="text-lg font-semibold text-gray-900 ">
+        Team <span className='text-blue-700'>Activity</span>
+      </h3>
+    </div>
+    
 
     <div className="space-y-4">
       {fetchingRecent ? <div className="text-center py-12">

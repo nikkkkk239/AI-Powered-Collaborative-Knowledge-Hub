@@ -58,7 +58,7 @@ const TeamPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-5xl mx-auto p-8 rounded-2xl shadow-lg bg-gradient-to-br from-white/80 to-gray-50/70 backdrop-blur border border-gray-200">
+      <div className="max-w-5xl slide-top-in mx-auto p-8 rounded-2xl shadow-lg bg-gradient-to-br from-white/80 to-gray-50/70 backdrop-blur border border-gray-200">
         {isLoading ? (
           <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
