@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDebounce } from "use-debounce"; 
-
-import { Plus, Filter,FileText, X, Edit, DeleteIcon, Delete, LucideDelete, Trash, MoveLeft, ChevronLeft } from 'lucide-react';
-import { Layout } from '../components/Layout';
-import { DocumentCard } from '../components/DocumentCard';
+import { Plus, Filter, FileText, X, Edit, Trash } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useDocumentStore } from '../stores/documentStore';
 import { useAIStore } from '../stores/aiStore';
+import { useTheme } from '../context/ThemeContext';
+import { DocumentCard } from '../components/DocumentCard';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { token, user } = useAuthStore();
+  const { theme } = useTheme();
+  const dark = theme === "dark";
+
   const { 
     documents, 
     recentActivity, 
@@ -25,18 +27,18 @@ export const Dashboard: React.FC = () => {
     setSelectedTags,
     setSearchQuery
   } = useDocumentStore();
+
   const { summarizeDocument, generateTags } = useAIStore();
   
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [searchInput, setSearchInput] = useState("");
-  const [showSidebar , setShowSidebar] = useState(true);
   const [debouncedSearch] = useDebounce(searchInput, 500);
 
   useEffect(() => {
     if (token) {
       fetchDocuments(token, {
-        search: debouncedSearch.trim() , // undefined means "no filter"
+        search: debouncedSearch.trim(),
         tags: selectedTags.join(","),
       });
       fetchRecentActivity(token);
@@ -45,30 +47,20 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const tags = new Set<string>();
-    documents.forEach(doc => {
-      doc.tags.forEach(tag => tags.add(tag));
-    });
+    documents.forEach(doc => doc.tags.forEach(tag => tags.add(tag)));
     setAvailableTags(Array.from(tags));
   }, [documents]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this document?')) {
-      try {
-        await deleteDocument(token!, id);
-      } catch (error: any) {
-        alert(error.message);
-      }
+      try { await deleteDocument(token!, id); } 
+      catch (error: any) { alert(error.message); }
     }
   };
-//   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-//   if (e.key === "Enter" ) {
-//     setSearchQuery(searchInput); // update store only when Enter is pressed
-//   }
-// };
 
   const handleSummarize = async (id: string) => {
     if (!user?.hasGeminiKey) {
-      alert('Please add your Gemini API key in profile settings to use AI features.');
+      alert('Please add your Gemini API key in profile settings.');
       return;
     }
     try {
@@ -84,31 +76,21 @@ export const Dashboard: React.FC = () => {
 
   const handleGenerateTags = async (id: string) => {
     if (!user?.hasGeminiKey) {
-      alert('Please add your Gemini API key in profile settings to use AI features.');
+      alert('Please add your Gemini API key in profile settings.');
       return;
     }
-
     try {
       const doc = documents.find(d => d._id === id);
       if (doc) {
         const tags = await generateTags(token!, doc.title, doc.content);
-        // Update document with new tags
         const response = await fetch(`http://localhost:5000/api/documents/${id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ tags }),
         });
-        
-        if (response.ok) {
-          fetchDocuments(token!);
-        }
+        if (response.ok) fetchDocuments(token!);
       }
-    } catch (error: any) {
-      alert(error.message);
-    }
+    } catch (error: any) { alert(error.message); }
   };
 
   const toggleTag = (tag: string) => {
@@ -119,205 +101,182 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col slide-down-in sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Docs <span className='text-blue-700'>Dashboard</span></h1>
-            <p className="mt-1 text-sm text-gray-600">
-              Manage and explore your team's knowledge base
-            </p>
-          </div>
-          <button
-            onClick={() => navigate('/documents/new')}
-            className="mt-4 sm:mt-0 cursor-pointer inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md shadow-blue-500/50 shadow-lg hover:bg-blue-700 transition-all max-w-[190px] text-center hover:scale-105"
-          >
-            <Plus className="h-4 w-4" />
-            <span>New Document</span>
-          </button>
+    <div className={`space-y-6 transition-colors duration-300 ${dark ? "bg-black text-gray-200" : "bg-gray-50 text-gray-900"}`}>
+      {/* Header */}
+      <div className={`flex flex-col slide-down-in sm:flex-row sm:items-center sm:justify-between`}>
+        <div>
+          <h1 className={`text-2xl font-bold ${dark ? "text-white" : "text-gray-900"}`}>
+            Docs <span className={dark ? "text-blue-400" : "text-blue-700"}>Dashboard</span>
+          </h1>
+          <p className={dark ? "mt-1 text-sm text-gray-400" : "mt-1 text-sm text-gray-600"}>
+            Manage and explore your team's knowledge base
+          </p>
         </div>
-
-        {/* Filters and Search */}
-        <div className="bg-white transition-all slide-down-in rounded-2xl shadow-sm border border-gray-100 p-6">
-  {/* Search + Filter */}
-  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-    {/* Search Input */}
-    <div className="relative flex-1">
-      <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
+        <button
+          onClick={() => navigate('/documents/new')}
+          className="mt-4 sm:mt-0 cursor-pointer inline-flex items-center space-x-2 px-4 py-2 rounded-md shadow-lg transition-all max-w-[190px] text-center hover:scale-105 bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/50"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z"
-          />
-        </svg>
-      </span>
-      <input
-        type="text"
-        placeholder="Search documents..."
-        value={searchInput}
-        onChange={(e) => setSearchInput(e.target.value)}
-        // onKeyDown={handleSearchKeyDown}
-        className="w-full pl-10 pr-4 py-2.5 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm"
-      />
-    </div>
+          <Plus className="h-4 w-4" />
+          <span>New Document</span>
+        </button>
+      </div>
 
-    {/* Filter Button */}
-    <button
-      onClick={() => setShowFilters(!showFilters)}
-      className={`inline-flex max-w-[100px] items-center cursor-pointer gap-2 px-4 py-2 rounded-full text-sm font-medium justify-center transition-all shadow-sm ${
-        showFilters
-          ? "bg-blue-500 text-white hover:bg-blue-600"
-          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-      }`}
-    >
-      <Filter className="h-4 w-4" />
-      <span>Tags</span>
-    </button>
-  </div>
+      {/* Filters */}
+      <div className={`transition-all slide-down-in rounded-2xl shadow-sm border p-6 ${dark ? "bg-white/10 border-gray-700" : "bg-white border-gray-100"}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="relative flex-1">
+            <span className={`absolute inset-y-0 left-3 flex items-center ${dark ? "text-gray-400" : "text-gray-400"}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z" />
+              </svg>
+            </span>
+            <input
+              type="text"
+              placeholder="Search documents..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className={`w-full pl-10 pr-4 py-2.5 rounded-full border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm ${
+                dark ? "bg-white/10 border-gray-700 text-gray-200 placeholder-gray-400" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
+              }`}
+            />
+          </div>
 
-  {/* Tag Filters */}
-  
-  {showFilters && (
-    <div
-  className={`overflow-hidden ${
-    showFilters ? "animate-[slide-down_0.7s_ease-out_forwards]" : "animate-[slide-up_0.8s_ease-in_forwards]"
-  }`}
->
-    <div className="mt-5 pt-5 border-t border-gray-200">
-      <div className="flex flex-wrap gap-2">
-        {availableTags.length == 0 ? <div className='text-sm text-black/50'>No tags available</div> : availableTags.map((tag) => (
           <button
-            key={tag}
-            onClick={() => toggleTag(tag)}
-            className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-sm ${
-              selectedTags.includes(tag)
-                ? "bg-blue-100 text-blue-800 border border-blue-200"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`inline-flex max-w-[100px] items-center gap-2 px-4 py-2 rounded-full text-sm font-medium justify-center cursor-pointer transition-all shadow-sm ${
+              showFilters
+                ? "bg-blue-500 text-white hover:bg-blue-600"
+                : dark
+                  ? "bg-white/10 text-gray-200 hover:bg-white/20"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            <span>{tag}</span>
-            {selectedTags.includes(tag) && <X className="h-3 w-3" />}
+            <Filter className="h-4 w-4" />
+            <span>Tags</span>
           </button>
-        ))}
-      </div>
-    </div>
-    </div>
-  )}
-</div>
-
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Documents */}
-          <div className="lg:col-span-3">
-            {isLoading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading documents...</p>
-              </div>
-            ) : documents.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No documents yet</h3>
-                <p className="text-gray-600 mb-4">Start building your knowledge base</p>
-                <button
-                  onClick={() => navigate('/documents/new')}
-                  className="inline-flex cursor-pointer items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Create First Document</span>
-                </button>
-              </div>
-            ) : (
-              <div className="grid gap-6">
-                {documents.map(document => (
-                  <DocumentCard
-                    key={document._id}
-                    document={document}
-                    onEdit={(id) => navigate(`/documents/${id}/edit`)}
-                    onDelete={handleDelete}
-                    onSummarize={handleSummarize}
-                    onGenerateTags={handleGenerateTags}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6  slide-right-in">
-  {/* Team Activity */}
-  <div className="bg-white rounded-2xl shadow-sm shadow-blue-500/10 hover:shadow-lg transition-all duration-200 hover:scale-105 border border-gray-100 p-6 ">
-    <div className='flex w-full items-center justify-between mb-6'>
-      <h3 className="text-lg font-semibold text-gray-900 ">
-        Team <span className='text-blue-700'>Activity</span>
-      </h3>
-    </div>
-    
-
-    <div className="space-y-4">
-      {fetchingRecent ? <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading activities...</p>
-              </div> : recentActivity.length == 0 ? <div className='text-sm text-black/40'>No Recent Activities</div> : recentActivity.map((doc, i) => {
-        const iconStyles =
-          doc.activityType === "create"
-            ? "bg-green-100 text-green-600"
-            : doc.activityType === "update"
-            ? "bg-blue-100 text-blue-600"
-            : "bg-red-100 text-red-600";
-
-        const Icon =
-          doc.activityType === "create"
-            ? FileText
-            : doc.activityType === "update"
-            ? Edit
-            : Trash;
-
-        return (
-          <div
-            key={i}
-            className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition"
-          >
-            {/* Icon */}
-            <div
-              className={`flex-shrink-0 p-2 rounded-lg ${iconStyles} shadow-sm`}
-            >
-              <Icon className="h-4 w-4" />
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 break-words">
-                <span className="font-semibold">{doc.docName}</span>{" "}
-                {doc.activityType === "create"
-                  ? "was created"
-                  : doc.activityType === "update"
-                  ? "was updated"
-                  : "was deleted"}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                by <span className="font-medium">{doc.user.name}</span> •{" "}
-                {new Date(doc.date).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  </div>
-</div>
-
         </div>
+
+        {showFilters && (
+          <div className="mt-5 pt-5 border-t transition-colors duration-300" style={{borderColor: dark ? "#444" : ""}}>
+            <div className="flex flex-wrap gap-2">
+              {availableTags.length === 0 ? (
+                <div className="text-sm text-gray-400">No tags available</div>
+              ) : availableTags.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-sm ${
+                    selectedTags.includes(tag)
+                      ? dark
+                        ? "bg-gray-700 text-white border-gray-600"
+                        : "bg-blue-100 text-blue-800 border-blue-200"
+                      : dark
+                        ? "bg-gray-800 text-gray-200 border-gray-700 hover:bg-gray-700"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
+                  }`}
+                >
+                  <span>{tag}</span>
+                  {selectedTags.includes(tag) && <X className="h-3 w-3" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-    </Layout>
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Documents */}
+        <div className="lg:col-span-3">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${dark ? "border-white" : "border-blue-600"} mx-auto`}></div>
+              <p className={dark ? "mt-4 text-gray-400" : "mt-4 text-gray-600"}>Loading documents...</p>
+            </div>
+          ) : documents.length === 0 ? (
+            <div className={`text-center py-12 rounded-lg border p-6 ${dark ? "bg-white/10 border-gray-700" : "bg-white border-gray-200"}`}>
+              <FileText className={`h-12 w-12 ${dark ? "text-gray-400" : "text-gray-400"} mx-auto mb-4`} />
+              <h3 className={dark ? "text-lg font-medium text-white mb-2" : "text-lg font-medium text-gray-900 mb-2"}>No documents yet</h3>
+              <p className={dark ? "text-gray-400 mb-4" : "text-gray-600 mb-4"}>Start building your knowledge base</p>
+              <button
+                onClick={() => navigate('/documents/new')}
+                className='inline-flex items-center gap-2 px-4 py-2 rounded-md transition-colors bg-blue-600 text-white hover:bg-blue-700'
+              >
+                <Plus className="h-4 w-4" />
+                <span>Create First Document</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-6">
+              {documents.map(document => (
+                <DocumentCard
+                  key={document._id}
+                  document={document}
+                  onEdit={(id) => navigate(`/documents/${id}/edit`)}
+                  onDelete={handleDelete}
+                  onSummarize={handleSummarize}
+                  onGenerateTags={handleGenerateTags}
+                  darkMode={dark} // if your DocumentCard supports darkMode prop
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          <div className={`rounded-2xl shadow-sm p-6 transition-all duration-200 ${dark ? "bg-gray-900 border border-gray-700" : "bg-white border border-gray-100"}`}>
+            <div className='flex items-center justify-between mb-6'>
+              <h3 className={dark ? "text-lg font-semibold text-white" : "text-lg font-semibold text-gray-900"}>
+                Team <span className={dark ? "text-blue-400" : "text-blue-700"}>Activity</span>
+              </h3>
+            </div>
+
+            <div className="space-y-4">
+              {fetchingRecent ? (
+                <div className="text-center py-12">
+                  <div className={`animate-spin rounded-full h-6 w-6 border-b-2 mx-auto ${dark ? "border-white" : "border-blue-600"}`}></div>
+                  <p className={dark ? "mt-4 text-gray-400" : "mt-4 text-gray-600"}>Loading activities...</p>
+                </div>
+              ) : recentActivity.length === 0 ? (
+                <div className={dark ? "text-sm text-gray-400" : "text-sm text-black/40"}>No Recent Activities</div>
+              ) : recentActivity.map((doc, i) => {
+                const iconStyles =
+                  doc.activityType === "create"
+                    ? dark ? "bg-green-800 text-green-100" : "bg-green-100 text-green-600"
+                    : doc.activityType === "update"
+                    ? dark ? "bg-blue-800 text-blue-100" : "bg-blue-100 text-blue-600"
+                    : dark ? "bg-red-800 text-red-100" : "bg-red-100 text-red-600";
+
+                const Icon =
+                  doc.activityType === "create"
+                    ? FileText
+                    : doc.activityType === "update"
+                    ? Edit
+                    : Trash;
+
+                return (
+                  <div key={i} className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-700 transition">
+                    <div className={`flex-shrink-0 p-2 rounded-lg shadow-sm ${iconStyles}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={dark ? "text-sm font-medium text-gray-200 break-words" : "text-sm font-medium text-gray-900 break-words"}>
+                        <span className="font-semibold">{doc.docName}</span>{" "}
+                        {doc.activityType === "create" ? "was created" : doc.activityType === "update" ? "was updated" : "was deleted"}
+                      </p>
+                      <p className={dark ? "text-xs text-gray-400 mt-1" : "text-xs text-gray-500 mt-1"}>
+                        by <span className="font-medium">{doc.user.name}</span> • {new Date(doc.date).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   );
 };

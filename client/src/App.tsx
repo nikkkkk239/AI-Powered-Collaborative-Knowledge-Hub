@@ -12,6 +12,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
 import JoinTeam from './components/JoinTeam';
 import { Toaster } from 'react-hot-toast';
+import { Layout } from './components/Layout';
 
 
 function App() {
@@ -32,7 +33,8 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Layout><Dashboard /></Layout>
+                
               </ProtectedRoute>
             }
           />
