@@ -165,13 +165,13 @@ export const Dashboard: React.FC = () => {
                 <button
                   key={tag}
                   onClick={() => toggleTag(tag)}
-                  className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-sm ${
+                  className={`inline-flex cursor-pointer items-center gap-1 px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-sm ${
                     selectedTags.includes(tag)
                       ? dark
-                        ? "bg-gray-700 text-white border-gray-600"
+                        ? "bg-white/20 text-white border-black/20"
                         : "bg-blue-100 text-blue-800 border-blue-200"
                       : dark
-                        ? "bg-gray-800 text-gray-200 border-gray-700 hover:bg-gray-700"
+                        ? "bg-black text-gray-200 border-white hover:bg-white/10"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
                   }`}
                 >
@@ -224,8 +224,8 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
-          <div className={`rounded-2xl shadow-sm p-6 transition-all duration-200 ${dark ? "bg-gray-900 border border-gray-700" : "bg-white border border-gray-100"}`}>
+        <div className="space-y-6 slide-right-in">
+          <div className={`rounded-2xl shadow-sm hover:shadow-lg hover:shadow-blue-500/20 hover:scale-102 p-6 transition-all duration-200 ${dark ? "bg-white/10 border border-gray-700" : "bg-white border border-gray-100"}`}>
             <div className='flex items-center justify-between mb-6'>
               <h3 className={dark ? "text-lg font-semibold text-white" : "text-lg font-semibold text-gray-900"}>
                 Team <span className={dark ? "text-blue-400" : "text-blue-700"}>Activity</span>
@@ -256,7 +256,7 @@ export const Dashboard: React.FC = () => {
                     : Trash;
 
                 return (
-                  <div key={i} className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-700 transition">
+                  <div key={i} className={`flex items-start gap-4 p-3 rounded-xl ${dark?"hover:bg-white/10" : "hover:bg-gray-200"} transition-all duration-150`}>
                     <div className={`flex-shrink-0 p-2 rounded-lg shadow-sm ${iconStyles}`}>
                       <Icon className="h-4 w-4" />
                     </div>

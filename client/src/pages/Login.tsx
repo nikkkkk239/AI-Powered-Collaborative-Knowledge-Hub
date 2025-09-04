@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
-import { FileText, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
+import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 
 export const Login: React.FC = () => {
@@ -22,7 +22,6 @@ export const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
     try {
       if (isLogin) {
         await login(formData.email, formData.password);
@@ -42,152 +41,129 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen animated-bg flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-8 animate-[fadeInUp_0.6s_ease]">
-        <div className="text-center">
-          <div className="flex justify-center">
-            <FileText className="h-12 w-12 text-blue-600" />
+    <div className="min-h-screen flex">
+      {/* Left Panel */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gray-50 backdrop-blur-lg text-white flex-col justify-between items-center p-15">
+      <div className=' relative flex hover:shadow-md flex-col justify-between items-center rounded-4xl overflow-hidden  w-full h-full'>
+        <img src="background3.jpeg" alt="Background" className='z-[-1] absolute object-cover w-full h-full ' />
+
+      <div className='flex flex-col mt-20 items-center gap-1'>
+        <h1 className="text-4xl font-bold drop-shadow-md">Welcome to HiveMind</h1>
+        <p className="text-lg text-blue-100 mb-12 drop-shadow-md">
+          Your Gateway to Effortless Management.
+        </p>
+      </div>
+      <div className='flex flex-col mb-25 items-center gap-1'>
+        <h2 className="text-3xl font-semibold drop-shadow-md">Seamless Collaboration</h2>
+        <p className="mt-2 text-blue-200 text-center drop-shadow-md ">
+          Effortlessly work together with your team in real-time.
+        </p>
+      </div>
+      </div>
+      </div>
+
+      {/* Right Panel */}
+      <div className="flex-1 flex  items-center justify-center bg-gray-50">
+        <div  className="w-full  max-w-md  rounded-2xl  p-8">
+          <div className="flex justify-center items-center gap-1 mb-6">
+            <img src="logo.jpg" alt="" className='w-10 h-10'/>
+            <span className="text-2xl font-bold text-blue-600 text-left w-full">HiveMind</span>
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-white drop-shadow-md">
-            {isLogin ? 'Sign in to' : 'Create'} KnowledgeHub
-          </h2>
 
+          <div className="flex justify-between mb-6">
+            <button
+              onClick={() => setIsLogin(false)}
+              className={`w-1/2 py-2 font-medium rounded-l-xl ${
+                !isLogin ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              Sign Up
+            </button>
+            <button
+              onClick={() => setIsLogin(true)}
+              className={`w-1/2 py-2 font-medium rounded-r-xl ${
+                isLogin ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              Sign In
+            </button>
+          </div>
 
-          <p className="mt-2 text-sm text-gray-700">
-            {isLogin
-              ? "Access your team's collaborative knowledge base"
-              : "Join your team's knowledge sharing platform"}
-          </p>
-        </div>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {!isLogin && (
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Full Name"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  required
+                />
+              </div>
+            )}
 
-        {/* Glassmorphism Card */}
-        <div className="bg-white/70 backdrop-blur-md py-8 px-6 shadow-2xl rounded-2xl border border-white/20">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Email ID"
+                className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                required
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Password"
+                className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-gray-400"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md animate-shake">
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md">
                 {error}
               </div>
             )}
 
-            {!isLogin && (
-              <div>
-                <label htmlFor="name" className="sr-only">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required={!isLogin}
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-400 
-                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Full Name"
-                  />
-                </div>
-              </div>
-            )}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-md transition"
+            >
+              {isLoading ? 'Processing...' : isLogin ? 'Sign In' : 'Create Account'}
+            </button>
 
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-400 
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Email address"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md placeholder-gray-400 
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="group relative w-full flex justify-center py-3 px-4 text-sm font-medium rounded-md text-white cursor-pointer
-                           bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 
-                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 
-                           disabled:opacity-50 disabled:cursor-not-allowed 
-                           transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.97]"
-              >
-                {isLoading ? 'Processing...' : (isLogin ? 'Sign in' : 'Create account')}
-              </button>
-            </div>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-blue-600 hover:text-blue-500 transition-colors"
-              >
-                {isLogin
-                  ? "Don't have an account? Sign up"
-                  : "Already have an account? Sign in"}
-              </button>
-            </div>
+            {/* Social Login */}
           </form>
+
+          {/* Privacy Text */}
+          <p className="mt-6 text-xs text-gray-500 text-center">
+            By signing up you agree to our <span className="underline cursor-pointer">Terms of Use</span> & <span className="underline cursor-pointer">Privacy Policy</span>.
+          </p>
         </div>
       </div>
-
-      {/* Extra animations */}
-      <style>{`
-        @keyframes fadeInUp {
-          0% { opacity: 0; transform: translateY(20px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-shake {
-          animation: shake 0.3s ease-in-out;
-        }
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          20%, 60% { transform: translateX(-6px); }
-          40%, 80% { transform: translateX(6px); }
-        }
-      `}</style>
     </div>
   );
 };

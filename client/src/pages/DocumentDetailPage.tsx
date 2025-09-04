@@ -5,11 +5,14 @@ import { X } from "lucide-react";
 import { useAuthStore } from "../stores/authStore";
 import { MoveLeftIcon, Sparkles, Tag } from "lucide-react";
 import TextareaAutosize from "react-textarea-autosize";
+import { useTheme } from "../context/ThemeContext";
 
 const DocumentDetailsPage = () => {
   const { documentId } = useParams();
   const navigate = useNavigate();
   const { user, token } = useAuthStore();
+  const { theme } = useTheme();
+  const darkMode = theme === "dark";
 
   const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -83,64 +86,41 @@ const DocumentDetailsPage = () => {
 
   const handleGenerateTags = async () => {
     setIsProcessing(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/ai/tags/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body:JSON.stringify({content : editForm.content , title:editForm.title})
+      });
+      const data = await res.json();
+      if (res.ok) setEditForm((prev) => ({ ...prev, tags: data.tags }));
+      else if (res.status === 503) alert("Gemini is currently overloaded. Please try again later.");
+    } catch (err) {
+      console.error("Error:", err);
+    } finally { setIsProcessing(false); }
+  };
 
-  try {
-    const res = await fetch(`http://localhost:5000/api/ai/tags/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body:JSON.stringify({content : editForm.content , title:editForm.title})
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setEditForm((prev) => ({ ...prev, tags: data.tags }));
-    } else {
-      if (res.status === 503) {
-        alert("Gemini is currently overloaded. Please try again later.");
-      } else {
-        console.error("Summarize failed:", data.message);
-      }
-    }
-  } catch (err) {
-    console.error("Error:", err);
-  }
-  finally{
-    setIsProcessing(false);
-  }
-};
-const handleSummarize = async () => {
+  const handleSummarize = async () => {
     setIsProcessing(true)
-  try {
-    console.log("click")
-    const res = await fetch(`http://localhost:5000/api/ai/summarize/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ content: editForm.content , title : editForm.title})
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setEditForm((prev) => ({ ...prev, summary: data.summary }));
-    } else {
-      if (res.status === 503) {
-        alert("Gemini is currently overloaded. Please try again later.");
-      } else {
-        console.error("Summarize failed:", data.message);
-      }
-    }
-  } catch (err) {
-    console.error("Error:", err);
-  }
-  finally{
-    
-    setIsProcessing(false)
-
-  }
-};
+    try {
+      const res = await fetch(`http://localhost:5000/api/ai/summarize/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: editForm.content , title : editForm.title})
+      });
+      const data = await res.json();
+      if (res.ok) setEditForm((prev) => ({ ...prev, summary: data.summary }));
+      else if (res.status === 503) alert("Gemini is currently overloaded. Please try again later.");
+    } catch (err) {
+      console.error("Error:", err);
+    } finally { setIsProcessing(false); }
+  };
 
   const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && e.currentTarget.value.trim()) {
@@ -159,7 +139,6 @@ const handleSummarize = async () => {
     });
   };
 
-  // ✅ Check if any changes are made
   const isChanged = useMemo(() => {
     if (!document) return false;
     return (
@@ -169,30 +148,31 @@ const handleSummarize = async () => {
       JSON.stringify(editForm.tags) !== JSON.stringify(document.tags || [])
     );
   }, [editForm, document]);
-  console.log(selectedVersion);
 
-  if (loading) return <div className="text-center min-h-[100vh] flex min-w-[100vw] gap-5 items-center justify-center">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 "></div>
-                <p className=" text-gray-600">Loading...</p>
-              </div>;
-  if (!document) return <div className="p-6 text-red-600">Document not found</div>;
+  if (loading) return (
+    <div className={`text-center min-h-[100vh] flex min-w-[100vw] gap-5 items-center justify-center ${darkMode ? "bg-black text-white" : "bg-white text-black"}`}>
+      <div className={`animate-spin rounded-full h-10 w-10 border-b-2 ${darkMode ? "border-white" : "border-black"}`}></div>
+      <p className={`${darkMode ? "text-white" : "text-black"}`}>Loading...</p>
+    </div>
+  );
+  if (!document) return <div className={`p-6 ${darkMode ? "text-white bg-black" : "text-black bg-white"}`}>Document not found</div>;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen max-w-4xl mx-auto">
+    <div className={`${darkMode ? "bg-black text-white" : "bg-black/1 text-black"} p-6 min-h-screen max-w-4xl mx-auto`}>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex flex-row items-center gap-5">
-        <MoveLeftIcon className="cursor-pointer" onClick={()=>navigate(-1)}/>
-        {editing ? (
-          <input
-            type="text"
-            value={editForm.title}
-            onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-            className="text-3xl font-bold text-blue-700 border-b border-gray-300 focus:outline-none px-2 w-full"
-          />
-        ) : (
-          <h1 className="text-3xl font-bold text-blue-700">{document.title}</h1>
-        )}
+          <MoveLeftIcon className="cursor-pointer" onClick={()=>navigate(-1)}/>
+          {editing ? (
+            <input
+              type="text"
+              value={editForm.title}
+              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+              className={`text-3xl font-bold border-b px-2 w-full ${darkMode ? "border-white text-white" : "border-black text-black"} focus:outline-none`}
+            />
+          ) : (
+            <h1 className={`text-3xl ${darkMode ? "text-blue-500" : "text-blue-700"} font-bold`}>{document.title}</h1>
+          )}
         </div>
 
         <div className="flex gap-3">
@@ -200,8 +180,8 @@ const handleSummarize = async () => {
             <>
               <button
                 onClick={handleUpdate}
-                disabled={!isChanged} // ✅ disabled when no changes
-                className={`px-3 py-1 cursor-pointer rounded-lg text-white ${
+                disabled={!isChanged}
+                className={`px-3 py-1 ${!isChanged ? "cursor-not-allowed" : "cursor-pointer"} rounded-lg text-white ${
                   isChanged
                     ? "bg-green-500 hover:bg-green-600"
                     : "bg-gray-300 cursor-not-allowed"
@@ -217,67 +197,49 @@ const handleSummarize = async () => {
               </button>
             </>
           ) : (
-            <>
-              <div className="flex gap-3">
-  <button
-    onClick={() => setEditing(true)}
-    className="px-4 cursor-pointer py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white 
-               shadow-md hover:from-blue-600 hover:to-blue-700 
-               active:scale-95 transition-all duration-200"
-  >
-    Edit
-  </button>
-
-  <button
-    onClick={handleDelete}
-    className="px-4 cursor-pointer py-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white 
-               shadow-md hover:from-red-600 hover:to-red-700 
-               active:scale-95 transition-all duration-200"
-  >
-    Delete
-  </button>
-</div>
-
-            </>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setEditing(true)}
+                className="px-4 cursor-pointer py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-all duration-200"
+              >
+                Edit
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 cursor-pointer py-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md hover:from-red-600 hover:to-red-700 active:scale-95 transition-all duration-200"
+              >
+                Delete
+              </button>
+            </div>
           )}
         </div>
       </div>
 
       {/* Tags */}
       <div className="mb-4">
-        <h2 className="text-lg font-semibold mb-2">Tags</h2>
+        <h2 className={`text-lg font-semibold ${darkMode ? "text-blue-500" : "text-blue-700"} mb-2`}>Tags</h2>
         {editing ? (
           <div className="flex flex-wrap gap-2">
             {editForm.tags.map((tag, i) => (
               <span
                 key={i}
-                className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full flex items-center gap-2"
+                className={`${darkMode ? "bg-white/10 text-white" : "bg-blue-100 text-blue-700"} px-3 py-1 rounded-full flex items-center gap-2`}
               >
                 {tag}
-                <button
-                  onClick={() => removeTag(tag)}
-                  className="text-sm text-red-500 hover:text-red-700"
-                >
-                  ×
-                </button>
+                <button onClick={() => removeTag(tag)} className="text-sm text-red-500 hover:text-red-700 cursor-pointer">×</button>
               </span>
             ))}
             <input
               type="text"
               onKeyDown={handleTagInput}
               placeholder="Press Enter to add tag"
-              className="border px-2 py-1 rounded-md text-sm"
+              className={`border px-2 py-1 rounded-md text-sm ${darkMode ? "border-white text-white bg-black" : "border-black text-black bg-white"}`}
             />
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">
             {document.tags?.map((tag: string, i: number) => (
-              <span
-                key={i}
-                className="text-sm bg-blue-100 text-blue-600 px-3 py-1 rounded-full"
-              >
-                {tag}
-              </span>
+              <span key={i} className={`${darkMode ? "bg-white/10 text-white" : "bg-blue-100 text-blue-700"} px-3 py-1 rounded-full flex items-center gap-2`}>{tag}</span>
             ))}
           </div>
         )}
@@ -285,167 +247,116 @@ const handleSummarize = async () => {
 
       {/* Summary */}
       <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-2">Summary</h2>
+        <h2 className={`text-lg ${darkMode ? "text-blue-500" : "text-blue-700"} font-semibold mb-2`}>Summary</h2>
         {editing ? (
-          <TextareaAutosize minRows={1} maxRows={20}
+          <TextareaAutosize
+            minRows={1} maxRows={20}
             value={editForm.summary}
             onChange={(e) => setEditForm({ ...editForm, summary: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none"
+            className={`w-full border rounded-lg p-2 focus:outline-none ${darkMode ? "border-white text-white bg-black" : "border-black text-black bg-white"}`}
           />
         ) : (
-          <p className="text-gray-700 italic">{document.summary || "No summary"}</p>
+          <p className="italic">{document.summary || "No summary"}</p>
         )}
       </div>
 
       {/* Content */}
-      <div className="bg-white shadow-sm rounded-xl p-6 border border-gray-200 mb-6">
-        <h2 className="text-xl font-semibold mb-3">Content</h2>
+      <div className={`shadow-sm rounded-xl p-6 border mb-6 ${darkMode ? "bg-black border-white/50" : "bg-white border-black"}`}>
+        <h2 className={`text-xl font-semibold ${darkMode ? "text-blue-500" : "text-blue-700"} mb-3`}>Content</h2>
         {editing ? (
-          <TextareaAutosize minRows={1} maxRows={50}
+          <TextareaAutosize
+            minRows={1} maxRows={50}
             value={editForm.content}
-            onChange={(e) =>
-              setEditForm({ ...editForm, content: e.target.value })
-            }
-            className="w-full h-40 border border-gray-300 rounded-lg p-2 focus:outline-none"
+            onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+            className={`w-full h-40 border rounded-lg p-2 focus:outline-none ${darkMode ? "border-white text-white bg-black" : "border-black text-black bg-white"}`}
           />
         ) : (
-          <p className="text-gray-800 whitespace-pre-wrap">{document.content}</p>
+          <p className="whitespace-pre-wrap">{document.content}</p>
         )}
       </div>
 
       {/* Versions */}
       {document.versions?.length > 0 && !editing && (
-  <div className="bg-white shadow-sm rounded-xl p-6 border border-gray-200 mb-6">
-    <h2 className="text-xl font-semibold mb-3">Version History</h2>
-
-    {/* Horizontal Scroll */}
-    <div className="flex gap-4 overflow-x-auto pb-2">
-      {document.versions.map((v: any, i: number) => (
-        <div
-          key={i}
-          onClick={() => setSelectedVersion(v)}
-          className="min-w-[250px] max-w-[400px] cursor-pointer bg-gray-50 border rounded-xl shadow-sm p-4 hover:shadow-md transition-all"
-        >
-          <p className="text-sm text-gray-700 font-medium">
-            {new Date(v.updatedAt).toLocaleString()}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Updated by: {v.updatedBy?.name || "Unknown"}
-          </p>
-          <p className="text-xs text-gray-600 mt-2 line-clamp-2">
-            {v.summary || "No summary"}
-          </p>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-
-{/* Modal for Version Details */}
-{selectedVersion && (
-  <Dialog
-    open={!!selectedVersion}
-    onClose={() => setSelectedVersion(null)}
-    className="fixed inset-0 z-50 flex items-center justify-center p-4"
-  >
-    {/* Background Overlay */}
-    <div 
-  className="fixed inset-0 bg-black/40 backdrop-blur-sm" 
-  aria-hidden="true" 
-/>
-
-    <div className="relative bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl overflow-y-auto max-h-[90vh]">
-      {/* Close Button */}
-      <button
-        onClick={() => setSelectedVersion(null)}
-        className="absolute top-4 right-4 cursor-pointer text-gray-500 hover:text-gray-800"
-      >
-        <X className="h-6 w-6" />
-      </button>
-
-      <h3 className="text-xl font-semibold mb-4">Version Details</h3>
-
-      <p className="text-sm text-gray-600 mb-2">
-        Updated on:{" "}
-        <span className="font-medium">
-          {new Date(selectedVersion.updatedAt).toLocaleString()}
-        </span>
-      </p>
-
-      <p className="text-sm text-gray-600 mb-4">
-        Updated by:{" "}
-        <span className="font-medium">
-          {selectedVersion.updatedBy?.name || "Unknown"} (
-          {selectedVersion.updatedBy?.email || "No email"})
-        </span>
-      </p>
-
-      <div className="mb-4">
-        <h4 className="text-lg font-medium">Summary</h4>
-        <p className="text-gray-700 italic">
-          {selectedVersion.summary || "No summary"}
-        </p>
-      </div>
-
-      <div className="mb-4">
-        <h4 className="text-lg font-medium">Tags</h4>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {selectedVersion.tags?.length > 0 ? (
-            selectedVersion.tags.map((tag: string, i: number) => (
-              <span
+        <div className={`shadow-sm rounded-xl p-6 border mb-6 ${darkMode ? "bg-black border-white/50" : "bg-white border-black"}`}>
+          <h2 className={`text-xl font-semibold ${darkMode ? "text-blue-500" : "text-blue-700"} mb-1`}>Version History</h2>
+          <p className="mb-4 text-sm text-white/40">Revert Back to a previous version.</p>
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {document.versions.map((v: any, i: number) => (
+              <div
                 key={i}
-                className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs"
+                onClick={() => setSelectedVersion(v)}
+                className={`min-w-[250px] max-w-[400px] cursor-pointer rounded-xl p-4 shadow-sm border hover:shadow-md transition-all ${darkMode ? "bg-white/10 border-white/40" : "bg-blue-500 text-white border-black"}`}
               >
-                {tag}
-              </span>
-            ))
-          ) : (
-            <p className="text-gray-500 text-sm">No tags</p>
-          )}
+                <p className="text-sm font-medium">{new Date(v.updatedAt).toLocaleString()}</p>
+                <p className="text-xs mt-1">Updated by: {v.updatedBy?.name || "Unknown"}</p>
+                <p className="text-xs mt-2 line-clamp-2">{v.summary || "No summary"}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div>
-        <h4 className="text-lg font-medium mb-2">Content</h4>
-        <p className="text-gray-800 whitespace-pre-wrap">
-          {selectedVersion.content}
-        </p>
-      </div>
-    </div>
-  </Dialog>
-)}
+      {/* Modal */}
+      {selectedVersion && (
+        <Dialog open={!!selectedVersion} onClose={() => setSelectedVersion(null)} className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
+          <div className={`relative rounded-xl max-w-2xl w-full p-6 shadow-xl overflow-y-auto max-h-[90vh] ${darkMode ? "bg-black text-white" : "bg-white text-black"}`}>
+            <button onClick={() => setSelectedVersion(null)} className="absolute top-4 right-4 cursor-pointer">
+              <X className="h-6 w-6" />
+            </button>
+            <h3 className={`text-xl font-semibold mb-4 ${darkMode && "text-blue-500"}`}>Version Details</h3>
+            <p className="text-sm mb-2">Updated on: <span className="font-medium">{new Date(selectedVersion.updatedAt).toLocaleString()}</span></p>
+            <p className="text-sm mb-4">Updated by: <span className="font-medium">{selectedVersion.updatedBy?.name || "Unknown"} ({selectedVersion.updatedBy?.email || "No email"})</span></p>
+            <div className="mb-4">
+              <h4 className={`text-lg font-medium ${darkMode && "text-blue-500"}`}>Summary</h4>
+              <p className="italic">{selectedVersion.summary || "No summary"}</p>
+            </div>
+            <div className="mb-4">
+              <h4 className={`text-lg font-medium ${darkMode && "text-blue-500"}`}>Tags</h4>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {selectedVersion.tags?.length > 0 ? (
+                  selectedVersion.tags.map((tag: string, i: number) => (
+                    <span key={i} className={`${darkMode ? "bg-white/10 text-white" : "bg-blue-100 text-blue-700"} px-3 py-1 rounded-full flex items-center gap-2`}>{tag}</span>
+                  ))
+                ) : (<p className="text-sm">No tags</p>)}
+              </div>
+            </div>
+            <div>
+              <h4 className={`text-lg font-medium mb-2 ${darkMode && "text-blue-500"}`}>Content</h4>
+              <p className="whitespace-pre-wrap">{selectedVersion.content}</p>
+            </div>
+          </div>
+        </Dialog>
+      )}
 
       {/* AI Actions */}
-      {editing && <div className="flex flex-col gap-2">
-        <div className="flex flex-row gap-4">
-        <button
-          disabled={!user?.hasGeminiKey || isProcessing}
-          onClick={handleSummarize}
-          className="flex items-center space-x-1 px-3 py-2 text-sm bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <Sparkles className="h-4 w-4" />
-          <span>Summarize</span>
-        </button>
-        <button
-          disabled={!user?.hasGeminiKey || isProcessing}
-          onClick={handleGenerateTags}
-          className="flex items-center space-x-1 px-3 py-2 text-sm bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <Tag className="h-4 w-4" />
-          <span>Generate Tags</span>
-        </button>
+      {editing && (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-row gap-4">
+            <button
+              disabled={!user?.hasGeminiKey || isProcessing}
+              onClick={handleSummarize}
+              className="flex items-center space-x-1 px-3 py-2 text-sm bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Summarize</span>
+            </button>
+            <button
+              disabled={!user?.hasGeminiKey || isProcessing}
+              onClick={handleGenerateTags}
+              className="flex items-center space-x-1 px-3 py-2 text-sm bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            >
+              <Tag className="h-4 w-4" />
+              <span>Generate Tags</span>
+            </button>
+          </div>
+          {!user?.hasGeminiKey && (
+            <p className="text-xs text-yellow-600 mt-2">
+              Add your Gemini API key in profile settings to use AI features
+            </p>
+          )}
         </div>
-        {!user?.hasGeminiKey && (
-          <p className="text-xs text-yellow-600 mt-2">
-            Add your Gemini API key in profile settings to use AI features
-          </p>
       )}
-      </div>
-      
-      
-      }
-      
-
     </div>
   );
 };
