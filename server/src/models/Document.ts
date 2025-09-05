@@ -11,6 +11,7 @@ export interface IDocument extends Document {
   teamId : mongoose.Types.ObjectId;
   versions: Array<{
     content: string;
+    title:string;
     summary?: string;
     teamId : mongoose.Types.ObjectId;
     tags: string[];
@@ -48,6 +49,7 @@ const documentSchema = new Schema<IDocument>({
   },
   versions: [{
     content: { type: String, required: true },
+    title : {type:String , required : true},
     summary: { type: String, default: '' },
     tags: [{ type: String, trim: true, lowercase: true }],
     updatedAt: { type: Date, default: Date.now },

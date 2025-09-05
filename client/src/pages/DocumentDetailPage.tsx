@@ -18,6 +18,8 @@ const DocumentDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [isProcessing , setIsProcessing] = useState(false);
   const [editing, setEditing] = useState(false);
+
+  const [isSaving , setIsSaving] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<any | null>(null);
   const [editForm, setEditForm] = useState({
     title: "",
@@ -54,6 +56,7 @@ const DocumentDetailsPage = () => {
   }, [documentId, token]);
 
   const handleUpdate = async () => {
+    setIsSaving(true)
     try {
       const res = await fetch(`http://localhost:5000/api/documents/${documentId}`, {
         method: "PUT",
@@ -68,9 +71,34 @@ const DocumentDetailsPage = () => {
       setEditing(false);
     } catch (err) {
       console.error("Update failed:", err);
+    }finally{
+      setIsSaving(false);
     }
   };
 
+  const handleRevert = async()=>{
+    setLoading(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/documents/revert/${documentId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({title : selectedVersion.title , content : selectedVersion.content , tags : selectedVersion.tags , summary : selectedVersion.summary}),
+      });
+      const updated = await res.json();
+      setDocument(updated);
+      setEditing(false);
+
+    } catch (err) {
+      console.error("Update failed:", err);
+    }
+    finally{
+      setLoading(false);
+    }
+    setSelectedVersion(null);
+  }
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this document?")) return;
     try {
@@ -149,6 +177,7 @@ const DocumentDetailsPage = () => {
     );
   }, [editForm, document]);
 
+
   if (loading) return (
     <div className={`text-center min-h-[100vh] flex min-w-[100vw] gap-5 items-center justify-center ${darkMode ? "bg-black text-white" : "bg-white text-black"}`}>
       <div className={`animate-spin rounded-full h-10 w-10 border-b-2 ${darkMode ? "border-white" : "border-black"}`}></div>
@@ -187,7 +216,12 @@ const DocumentDetailsPage = () => {
                     : "bg-gray-300 cursor-not-allowed"
                 }`}
               >
-                Save
+                {isSaving ?  <div className={`text-center gap-2 items-center justify-center flex`}>
+                <div className={`animate-spin rounded-full h-2 w-2 border-b-1 ${darkMode ? "border-white" : "border-black"}`}></div>
+                <p className={`${darkMode ? "text-white" : "text-black"}`}>Saving...</p>
+              </div> : "Save"
+                  }
+                
               </button>
               <button
                 onClick={() => setEditing(false)}
@@ -276,12 +310,12 @@ const DocumentDetailsPage = () => {
       </div>
 
       {/* Versions */}
-      {document.versions?.length > 0 && !editing && (
+      {document?.versions?.length > 0 && !editing && (
         <div className={`shadow-sm rounded-xl p-6 border mb-6 ${darkMode ? "bg-black border-white/50" : "bg-white border-black"}`}>
           <h2 className={`text-xl font-semibold ${darkMode ? "text-blue-500" : "text-blue-700"} mb-1`}>Version History</h2>
           <p className="mb-4 text-sm text-white/40">Revert Back to a previous version.</p>
           <div className="flex gap-4 overflow-x-auto pb-2">
-            {document.versions.map((v: any, i: number) => (
+            {document?.versions?.map((v: any, i: number) => (
               <div
                 key={i}
                 onClick={() => setSelectedVersion(v)}
@@ -305,6 +339,8 @@ const DocumentDetailsPage = () => {
               <X className="h-6 w-6" />
             </button>
             <h3 className={`text-xl font-semibold mb-4 ${darkMode && "text-blue-500"}`}>Version Details</h3>
+
+            <h2 className="font-bold text-blue-500 mb-3 text-xl">{selectedVersion?.title}</h2>
             <p className="text-sm mb-2">Updated on: <span className="font-medium">{new Date(selectedVersion.updatedAt).toLocaleString()}</span></p>
             <p className="text-sm mb-4">Updated by: <span className="font-medium">{selectedVersion.updatedBy?.name || "Unknown"} ({selectedVersion.updatedBy?.email || "No email"})</span></p>
             <div className="mb-4">
@@ -325,6 +361,11 @@ const DocumentDetailsPage = () => {
               <h4 className={`text-lg font-medium mb-2 ${darkMode && "text-blue-500"}`}>Content</h4>
               <p className="whitespace-pre-wrap">{selectedVersion.content}</p>
             </div>
+            <div className="w-full flex flex-col gap-2 items-center justify-center mt-3">
+              <button className="bg-blue-500 text-white hover:bg-blue-700 transition-all duration-150 px-4 py-2 rounded-2xl cursor-pointer" onClick={handleRevert}>Revert Back</button>
+              <p className="text-center text-white/60 text-sm">By clicking on revert back , you will get your version back.</p>
+            </div>
+            
           </div>
         </Dialog>
       )}

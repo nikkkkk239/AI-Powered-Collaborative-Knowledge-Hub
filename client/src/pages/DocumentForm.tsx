@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Save, Sparkles, Tag, ArrowLeft , X} from 'lucide-react';
+import { Save, Sparkles, Tag, ArrowLeft, X } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuthStore } from '../stores/authStore';
 import { useDocumentStore } from '../stores/documentStore';
-import { useAIStore } from '../stores/aiStore';
 import toast from 'react-hot-toast';
 
 export const DocumentForm: React.FC = () => {
@@ -14,7 +13,7 @@ export const DocumentForm: React.FC = () => {
 
   const { token, user } = useAuthStore();
   const { currentDocument, fetchDocument, createDocument, updateDocument } = useDocumentStore();
-  const [isProcessing , setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -43,7 +42,6 @@ export const DocumentForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
       if (isEditing && id) {
         await updateDocument(token!, id, formData);
@@ -81,89 +79,82 @@ export const DocumentForm: React.FC = () => {
   };
 
   const handleSummarize = async () => {
-    setIsProcessing(true)
-  try {
-    console.log("click")
-    const res = await fetch(`http://localhost:5000/api/ai/summarize/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ content: formData.content , title : formData.title})
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setFormData((prev) => ({ ...prev, summary: data.summary }));
-    } else {
-      if (res.status === 503) {
-        alert("Gemini is currently overloaded. Please try again later.");
+    setIsProcessing(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/ai/summarize/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: formData.content, title: formData.title })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFormData((prev) => ({ ...prev, summary: data.summary }));
       } else {
-        console.error("Summarize failed:", data.message);
+        if (res.status === 503) {
+          alert("Gemini is currently overloaded. Please try again later.");
+        } else {
+          console.error("Summarize failed:", data.message);
+        }
       }
+    } catch (err) {
+      console.error("Error:", err);
+    } finally {
+      setIsProcessing(false);
     }
-  } catch (err) {
-    console.error("Error:", err);
-  }
-  finally{
-    
-    setIsProcessing(false)
-
-  }
-};
+  };
 
   const handleGenerateTags = async () => {
     setIsProcessing(true);
-
-
-  try {
-    const res = await fetch(`http://localhost:5000/api/ai/tags`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body:JSON.stringify({content : formData.content , title:formData.title})
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setFormData((prev) => ({ ...prev, tags: data.tags }));
-    } else {
-      if (res.status === 503) {
-        alert("Gemini is currently overloaded. Please try again later.");
+    try {
+      const res = await fetch(`http://localhost:5000/api/ai/tags`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: formData.content, title: formData.title })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFormData((prev) => ({ ...prev, tags: data.tags }));
       } else {
-        console.error("Summarize failed:", data.message);
+        if (res.status === 503) {
+          alert("Gemini is currently overloaded. Please try again later.");
+        } else {
+          console.error("Tags failed:", data.message);
+        }
       }
+    } catch (err) {
+      console.error("Error:", err);
+    } finally {
+      setIsProcessing(false);
     }
-  } catch (err) {
-    console.error("Error:", err);
-  }
-  finally{
-    setIsProcessing(false);
-  }
-};
+  };
 
   return (
-    <Layout>
-      <div className="max-w-4xl mx-auto">
+
+      <div className="max-w-4xl slide-top-in mx-auto">
         <div className="mb-6">
           <button
             onClick={() => navigate('/dashboard')}
-            className="inline-flex cursor-pointer items-center space-x-2 text-gray-600 hover:text-gray-900 mb-4"
+            className="inline-flex cursor-pointer items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Dashboard</span>
           </button>
-          
-          <h1 className="text-2xl font-bold text-gray-900">
+
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {isEditing ? 'Edit Document' : 'Create New Document'}
           </h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white dark:shadow-white/10 dark:bg-black rounded-lg shadow-sm dark:shadow-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
           {/* Title */}
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Title
             </label>
             <input
@@ -173,14 +164,14 @@ export const DocumentForm: React.FC = () => {
               required
               value={formData.title}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Document title..."
             />
           </div>
 
           {/* Content */}
           <div>
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Content
             </label>
             <textarea
@@ -190,7 +181,7 @@ export const DocumentForm: React.FC = () => {
               rows={12}
               value={formData.content}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Write your document content here..."
             />
           </div>
@@ -198,14 +189,14 @@ export const DocumentForm: React.FC = () => {
           {/* Summary */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label htmlFor="summary" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="summary" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Summary
               </label>
               <button
                 type="button"
                 onClick={handleSummarize}
                 disabled={!formData.content || isProcessing || !user?.hasGeminiKey}
-                className="inline-flex cursor-pointer items-center space-x-1 px-3 py-1 text-sm bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex cursor-pointer items-center space-x-1 px-3 py-2 text-sm bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Sparkles className="h-4 w-4" />
                 <span>AI Summarize</span>
@@ -217,7 +208,7 @@ export const DocumentForm: React.FC = () => {
               rows={3}
               value={formData.summary}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Document summary..."
             />
           </div>
@@ -225,25 +216,25 @@ export const DocumentForm: React.FC = () => {
           {/* Tags */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">Tags</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tags</label>
               <button
                 type="button"
                 onClick={handleGenerateTags}
                 disabled={!formData.content || isProcessing || !user?.hasGeminiKey}
-                className="inline-flex cursor-pointer items-center space-x-1 px-3 py-1 text-sm bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex cursor-pointer items-center space-x-1 px-3 py-2 text-sm bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Tag className="h-4 w-4" />
                 <span>AI Generate</span>
               </button>
             </div>
-            
+
             <div className="flex space-x-2 mb-2">
               <input
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Add tags..."
               />
               <button
@@ -254,7 +245,7 @@ export const DocumentForm: React.FC = () => {
                 Add
               </button>
             </div>
-            
+
             <div className="flex flex-wrap gap-2">
               {formData.tags.map(tag => (
                 <span
@@ -279,7 +270,7 @@ export const DocumentForm: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/dashboard')}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               Cancel
             </button>
@@ -293,6 +284,5 @@ export const DocumentForm: React.FC = () => {
           </div>
         </form>
       </div>
-    </Layout>
   );
 };

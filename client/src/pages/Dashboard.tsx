@@ -7,10 +7,12 @@ import { useDocumentStore } from '../stores/documentStore';
 import { useAIStore } from '../stores/aiStore';
 import { useTheme } from '../context/ThemeContext';
 import { DocumentCard } from '../components/DocumentCard';
+import { useSocket } from "../context/SocketContext";
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { token, user } = useAuthStore();
+  const socket = useSocket();
   const { theme } = useTheme();
   const dark = theme === "dark";
 
@@ -25,7 +27,8 @@ export const Dashboard: React.FC = () => {
     fetchRecentActivity,
     fetchingRecent,
     setSelectedTags,
-    setSearchQuery
+    setSearchQuery,
+    addDocument , addActivity
   } = useDocumentStore();
 
   const { summarizeDocument, generateTags } = useAIStore();
@@ -44,6 +47,42 @@ export const Dashboard: React.FC = () => {
       fetchRecentActivity(token);
     }
   }, [token, debouncedSearch, selectedTags]);
+
+
+   useEffect(() => {
+    if (!socket) return;
+
+    // New Document Event
+    socket.on("document:new", (doc : any) => {
+      console.log("📄 New document received:", doc);
+      addDocument(doc); // update store
+    });
+
+    // Document Updated Event
+    socket.on("document:update", (doc:any) => {
+      console.log("✏️ Document updated:", doc);
+      fetchDocuments(token!); // or update store directly
+    });
+
+    socket.on("document:delete", (docId:string) => {
+      console.log("🗑️ Document deleted:", docId);
+      fetchDocuments(token!);
+    });
+
+    // Recent Activity Event
+    socket.off("activity:new");
+    socket.on("team:activity", (activity : any) => {
+      console.log("🔥 New activity received:", activity);
+      addActivity(activity); // update store
+    });
+
+    return () => {
+      socket.off("document:new");
+      socket.off("document:update");
+      socket.off("document:delete");
+      socket.off("activity:new");
+    };
+  }, [socket, token, addDocument, addActivity, fetchDocuments]);
 
   useEffect(() => {
     const tags = new Set<string>();

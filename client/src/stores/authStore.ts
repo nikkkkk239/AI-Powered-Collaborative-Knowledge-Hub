@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast';
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -43,7 +44,11 @@ interface AuthState {
   getTeamDetails : ()=>Promise<void>;
   deleteTeam : ()=>Promise<void>;
   removeMember : (memberId : string)=>Promise<void>;
+  removeSelf : ()=>void;
+  joinMember : (member : any)=>void;
 }
+
+
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -52,6 +57,22 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       team : null,
       isLoading: false,
+      
+      removeSelf : ()=>{
+        set((state)=>({
+          user: state.user ? { ...state.user, teamId: null } : null,
+          team : null
+        }))
+        const current = get();
+        localStorage.setItem("auth-storage", JSON.stringify({ state: current }));
+      },
+      joinMember : (member)=>{
+        set((state) => ({
+          team: state.team
+            ? { ...state.team, members: [...state.team.members, { user: member, role: "member" }] }
+            : state.team,
+        }));
+      },
 
       login: async (email: string, password: string) => {
         set({ isLoading: true });
@@ -96,7 +117,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        localStorage.removeItem("auth-storage");
+        localStorage.setItem("auth-storage", "");
         set({ user: null, token: null });
       },
       createTeam : async(data : {name : string , description?:string})=>{
@@ -252,3 +273,6 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+
+

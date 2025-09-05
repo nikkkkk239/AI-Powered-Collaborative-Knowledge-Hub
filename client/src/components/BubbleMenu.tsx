@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
+import { useTheme } from '../context/ThemeContext';
 
 type MenuItem = {
   label: string;
@@ -82,6 +83,7 @@ export default function BubbleMenu({
 }: BubbleMenuProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
+  const darkMode = useTheme();
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const bubblesRef = useRef<HTMLAnchorElement[]>([]);
@@ -345,6 +347,7 @@ export default function BubbleMenu({
                       padding: 'clamp(1.5rem, 3vw, 8rem) 0',
                       fontSize: 'clamp(1.5rem, 4vw, 4rem)',
                       fontWeight: 400,
+                      border:`1px solid  ${darkMode ? "gray" : "black"}`,
                       lineHeight: 0,
                       willChange: 'transform',
                       height: 10

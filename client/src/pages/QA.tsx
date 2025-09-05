@@ -4,10 +4,12 @@ import { Layout } from '../components/Layout';
 import { useAuthStore } from '../stores/authStore';
 import { useQAStore } from '../stores/qastore';
 import { useTheme } from '../context/ThemeContext';
+import { useSocket } from '../context/SocketContext';
 
 export const QA: React.FC = () => {
   const { token, user } = useAuthStore();
-  const { askQuestion, isProcessing, fetchQuestions, qaList } = useQAStore();
+  const socket = useSocket();
+  const { askQuestion, isProcessing, fetchQuestions,addQnA, qaList } = useQAStore();
   const [loading, setLoading] = useState(true);
   const { theme } = useTheme();
   const darkMode = theme === "dark";
@@ -19,6 +21,22 @@ export const QA: React.FC = () => {
     };
     func();
   }, [fetchQuestions, token]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewQnA = ({ qa, senderId }: any) => {
+      if (senderId === user?._id) return; // ignore own messages
+      console.log("📄 New QnA received:", qa);
+      addQnA(qa); // update store
+    };
+
+    socket.on("qna:new", handleNewQnA);
+
+    return () => {
+      socket.off("qna:new", handleNewQnA);
+    };
+  }, [socket, user?._id, addQnA]);
 
   const [question, setQuestion] = useState('');
 
@@ -128,7 +146,7 @@ export const QA: React.FC = () => {
                     </div>
                     <div>
                       <p className={`${darkMode ? "text-white" : "text-black"} text-sm font-semibold`}>
-                        {qa.createdBy?.name || "Anonymous"}
+                        {qa.createdBy?.name ?? "Anonymous"}
                       </p>
                       <p className="text-xs">{formatDate(qa.createdAt!)}</p>
                     </div>
@@ -137,7 +155,7 @@ export const QA: React.FC = () => {
 
                 {/* Question */}
                 <div className="mb-4 border-l-4 border-blue-500 pl-3">
-                  <p className={`${darkMode ? "text-white" : "text-black"}`}>{qa.question}</p>
+                  <p className={`${darkMode ? "text-white" : "text-black"}`}>{qa?.question ?? "No question"}</p>
                 </div>
 
                 {/* Answer */}
@@ -147,7 +165,7 @@ export const QA: React.FC = () => {
                   </div>
                   <div className={`${darkMode ? "bg-white/10 border-white text-white" : "bg-gray-50 text-black"} flex-1 rounded-xl p-4`}>
                     <div className="prose prose-sm max-w-none">
-                      <p className="whitespace-pre-wrap">{qa.answer}</p>
+                      <p className="whitespace-pre-wrap">{qa.answer ?? "No answer"}</p>
                     </div>
                   </div>
                 </div>
@@ -164,7 +182,7 @@ export const QA: React.FC = () => {
         )}
 
         {!loading && qaList.length === 0 && (
-          <div className={`${darkMode ? "bg-black text-white border-white" : "bg-white text-black border-black"} text-center py-12 rounded-lg shadow-sm border`}>
+          <div className={`${darkMode ? "bg-black/50 text-white/60 border-white/40" : "bg-white text-black border-black"} text-center py-12 rounded-lg shadow-sm border`}>
             <MessageCircle className={`${darkMode ? "text-white" : "text-gray-400"} h-12 w-12 mx-auto mb-4`} />
             <h3 className="text-lg font-medium mb-2">No questions yet</h3>
             <p>Ask your first question to get AI-powered answers from your knowledge base</p>

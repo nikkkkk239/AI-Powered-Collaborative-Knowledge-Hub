@@ -143,7 +143,7 @@ export const Search: React.FC = () => {
             </div>
           </div>
         ) : searchQuery && !isSearching ? (
-          <div className={`${darkMode ? "bg-black border-white text-white" : "bg-white border-black text-black"} text-center py-12 rounded-lg shadow-sm border`}>
+          <div className={`${darkMode ? "bg-black border-white/50 text-white/60" : "bg-white border-black text-black"} text-center py-12 rounded-lg shadow-sm border`}>
             <SearchIcon className={`${darkMode ? "text-white" : "text-gray-400"} h-12 w-12 mx-auto mb-4`} />
             <h3 className="text-lg font-medium mb-2">No results found</h3>
             <p>Try adjusting your search terms or use semantic search</p>

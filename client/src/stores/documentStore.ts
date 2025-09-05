@@ -16,6 +16,7 @@ interface Document {
   createdAt: string;
   updatedAt: string;
   versions?: Array<{
+    title:string;
     content: string;
     summary: string;
     tags: string[];
@@ -55,6 +56,8 @@ interface DocumentState {
   setSearchQuery: (query: string) => void;
   setSelectedTags: (tags: string[]) => void;
   setLoading: (loading: boolean) => void;
+  addDocument : (doc : Document)=>void;
+  addActivity : (activity:Activity)=>void;
 }
 
 export const useDocumentStore = create<DocumentState>((set, get) => ({
@@ -65,6 +68,17 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   searchQuery: '',
   fetchingRecent : true,
   selectedTags: [],
+  addDocument: (doc) =>
+    set((state) => ({ documents: [doc, ...state.documents] })),
+  addActivity: (activity) =>
+    set((state) => {
+      const updated = [activity, ...state.recentActivity];
+
+      // keep only latest 5
+      return { recentActivity: updated.slice(0, 5) };
+    }),
+
+  
 
   fetchDocuments: async (token: string, params = {}) => {
     set({ isLoading: true });
@@ -161,22 +175,31 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   },
 
   fetchRecentActivity: async (token: string) => {
-    try {
-      const response = await fetch('http://localhost:5000/api/documents/activity/recent', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+  try {
+    const response = await fetch('http://localhost:5000/api/documents/activity/recent', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
 
-      if (!response.ok) throw new Error('Failed to fetch recent activity');
+    if (!response.ok) throw new Error('Failed to fetch recent activity');
 
-      const res = await response.json();
-      set({ recentActivity : res.recentActivity });
-    } catch (error) {
-      console.error('Error fetching recent activity:', error);
-    }
-    finally{
-      set({fetchingRecent : false})
-    }
-  },
+    const res = await response.json();
+    
+    console.log("Activities before sort:", res.recentActivity);
+
+
+    // sort by `data` (newest first)
+    const sortedActivities = res.recentActivity.sort(
+      (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    set({ recentActivity: sortedActivities });
+  } catch (error) {
+    console.error('Error fetching recent activity:', error);
+  } finally {
+    set({ fetchingRecent: false });
+  }
+},
+
 
   setSearchQuery: (query: string) => set({ searchQuery: query }),
   setSelectedTags: (tags: string[]) => set({ selectedTags: tags }),

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { DocumentForm } from './pages/DocumentForm';
@@ -14,19 +14,25 @@ import JoinTeam from './components/JoinTeam';
 import { Toaster } from 'react-hot-toast';
 import { Layout } from './components/Layout';
 
+import { SocketListener } from './components/SocketListner';
 
 function App() {
   const { user,team } = useAuthStore();
   console.log("User : " , user);
   console.log("Team : " , team);
 
+
+
+  
+
   
 
   return (
     <Router>
+      <SocketListener/>
       <div className="App">
         <Routes>
-          <Route path='/joinTeam' element={user?.teamId && user.teamId.length > 0 ? <Navigate to={"/dashboard"} replace/> : <JoinTeam/>}/>
+          <Route path='/joinTeam' element={user?.teamId && user?.teamId?.length > 0 ? <Navigate to={"/dashboard"} replace/> : <JoinTeam/>}/>
 
           <Route path="/login" element={<Login />} />
           <Route
@@ -42,7 +48,8 @@ function App() {
             path="/documents/new"
             element={
               <ProtectedRoute>
-                <DocumentForm />
+                <Layout><DocumentForm /></Layout>
+                
               </ProtectedRoute>
             }
           />

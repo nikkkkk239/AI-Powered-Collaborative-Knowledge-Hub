@@ -4,6 +4,7 @@ import Document from "../models/Document";
 import { authenticate } from "../middleware/auth";
 import { callGemini } from "../lib/gemini";
 import { QA } from "../models/q&a";
+import redisClient from "../client"
 
 const router = express();
 
@@ -43,7 +44,15 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       createdBy: userId
     });
 
+
+
    const populatedQA = await QA.findById(qa._id).populate("createdBy", "name email");
+
+    await redisClient.publish("qna:new", JSON.stringify({
+      teamId,
+      qa:populatedQA,
+      senderId: req?.user?._id
+    }));
 
     res.json({ qa:populatedQA });
   } catch (error: any) {

@@ -4,6 +4,7 @@ import Team from "../models/Team";
 import User from "../models/User";
 import { IUser } from "../models/User";
 import { ObjectId } from "mongoose";
+import redisClient from "../client"
 
 interface AuthRequest extends Request {
   user: IUser & {_id : ObjectId};
@@ -88,6 +89,14 @@ export const joinTeam = async (req: AuthRequest, res: Response) => {
       .populate("owner", "name email")
       .populate("members.user", "name email");
 
+    await redisClient.publish(
+    "team:join",
+      JSON.stringify({
+        teamId: team._id,
+        member: { _id: user._id, name: user.name, email: user.email },
+      })
+    );
+
     res.json({ message: "Joined team successfully", team: populatedTeam, user });
   } catch (err) {
     console.log("Error in joinTeam:", err);
@@ -124,6 +133,13 @@ export const removeMember = async (req: AuthRequest, res: Response) => {
       .populate("members.user", "name email") // populate only needed fields
       .populate("owner", "name email");
 
+    await redisClient.publish("team:remove" , JSON.stringify({
+      teamId,
+      memberId,
+      senderId : requesterId
+
+    }))
+
     res.json({team : updatedTeam});
   } catch (err) {
     console.log("Error in removeMember : " , err);
@@ -150,6 +166,10 @@ export const deleteTeam = async (req: AuthRequest, res: Response) => {
     },{$set:{teamId : null}});
 
     await Team.findByIdAndDelete(teamId);
+
+    await redisClient.publish("team:delete" , JSON.stringify({
+      teamId,
+    }))
 
     res.json({ message: "Team deleted successfully" });
   } catch (err) {

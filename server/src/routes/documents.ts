@@ -122,6 +122,7 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       docName : title,
       activityType : "create",
       user:user._id,
+      date: new Date()
     })
 
     if (team.recentActivities.length > 5) {
@@ -130,11 +131,14 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
 
     await team.save();
     await team.populate("recentActivities.user", "name email")
-    await redisClient.publish("team:activity",JSON.stringify(team.recentActivities[team.recentActivities.length - 1]));
+    await redisClient.publish("team:activity",JSON.stringify({activity : team.recentActivities[team.recentActivities.length - 1] , teamId : team._id}));
 
     await document.save();
     await document.populate('createdBy', 'name email');
-    await redisClient.publish("document:new", JSON.stringify(document));
+    await redisClient.publish("document:new", JSON.stringify({
+    teamId: team._id,
+    document
+  }));
 
     res.status(201).json(document);
   } catch (error: any) {
@@ -164,6 +168,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
 
     // Create new version
     document.versions.push({
+      title : document.title,
       content: document.content,
       summary: document.summary,
       tags: document.tags,
@@ -193,21 +198,125 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
       docName:title || document.title,
       activityType : "update",
       user:user._id,
+      date: new Date()
     })
 
     if (team.recentActivities.length > 5) {
       team.recentActivities = team.recentActivities.slice(-5);
     }
     await team.save();
+    await team.populate("recentActivities.user", "name email")
+    await redisClient.publish("team:activity",JSON.stringify({activity : team.recentActivities[team.recentActivities.length - 1] , teamId : team._id}));
+
 
     await document.save();
     await document.populate('versions.updatedBy','name email');
+    await redisClient.publish("document:update", JSON.stringify({
+      teamId: team._id,
+      document
+    }));
 
     res.json(document);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
+
+router.put('/revert/:id', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { title, content, tags, summary } = req.body;
+    const userId = req.user!._id;
+    const user = req.user!;
+
+    const document = await Document.findById(req.params.id);
+    if (!document) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    if (document.teamId.toString() !== req?.user?.teamId?.toString()) {
+      return res.status(403).json({ message: "Not in your team" });
+    }
+
+    // 👉 Find the version the user clicked on
+    const targetVersionIndex = document.versions.findIndex(
+      v =>
+        v.title === title &&
+        v.content === content &&
+        v.summary === summary &&
+        JSON.stringify(v.tags) === JSON.stringify(tags)
+    );
+
+    if (targetVersionIndex === -1) {
+      return res.status(404).json({ message: "Version not found" });
+    }
+
+    const targetVersion = document.versions[targetVersionIndex];
+
+    // 👉 Push current doc as new version (before overwriting)
+    document.versions.push({
+      title: document.title,
+      content: document.content,
+      summary: document.summary,
+      tags: document.tags,
+      teamId: document.teamId,
+      updatedBy: userId as any,
+      updatedAt: new Date(),
+    });
+
+    // 👉 Overwrite doc with selected version
+    document.title = targetVersion.title;
+    document.content = targetVersion.content;
+    document.summary = targetVersion.summary;
+    document.tags = targetVersion.tags;
+
+    // 👉 Remove that version from versions[]
+    document.versions.splice(targetVersionIndex, 1);
+
+    if (document.versions.length > 5) {
+      document.versions = document.versions.slice(-5);
+    }
+
+    // update team activities
+    const team = await Team.findById(user.teamId);
+    if (!team) return res.status(404).json({ message: "Team Not Found." });
+
+    team.recentActivities.push({
+      docName: document.title,
+      activityType: "update",
+      user: user._id,
+      date: new Date(),
+    });
+    if (team.recentActivities.length > 5) {
+      team.recentActivities = team.recentActivities.slice(-5);
+    }
+
+    await team.save();
+    await team.populate("recentActivities.user", "name email");
+    await redisClient.publish(
+      "team:activity",
+      JSON.stringify({
+        activity: team.recentActivities[team.recentActivities.length - 1],
+        teamId: team._id,
+      })
+    );
+
+    await document.save();
+    await document.populate("versions.updatedBy", "name email");
+
+    await redisClient.publish(
+      "document:update",
+      JSON.stringify({
+        teamId: team._id,
+        document,
+      })
+    );
+
+    res.json(document);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 // Delete document
 router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
@@ -234,12 +343,20 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
       docName : document.title,
       activityType : "delete",
       user:user._id,
+      date: new Date()
     })
 
     if (team.recentActivities.length > 5) {
       team.recentActivities = team.recentActivities.slice(-5);
     }
     await team.save();
+    await team.populate("recentActivities.user", "name email")
+    await redisClient.publish("team:activity",JSON.stringify({activity : team.recentActivities[team.recentActivities.length - 1] , teamId : team._id}));
+
+    await redisClient.publish("document:delete", JSON.stringify({
+      teamId: team._id,
+      documentId : req.params.id
+    }));
 
     await Document.findByIdAndDelete(req.params.id);
     res.json({ message: 'Document deleted successfully' });

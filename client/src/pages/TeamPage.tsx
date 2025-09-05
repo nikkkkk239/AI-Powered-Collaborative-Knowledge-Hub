@@ -14,11 +14,10 @@ const getInitials = (name: string) =>
     .join("")
     .toUpperCase();
 
-interface TeamPageProps {
-  darkMode: boolean;
-}
 
-const TeamPage: React.FC<TeamPageProps> = () => {
+
+
+const TeamPage: React.FC = () => {
   const { getTeamDetails, deleteTeam, removeMember, team, user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
@@ -104,7 +103,7 @@ const TeamPage: React.FC<TeamPageProps> = () => {
                   Manage your team, invite members, and collaborate.
                 </p>
               </div>
-              {user?.id === team?.owner?._id && (
+              {user?._id === team?.owner?._id && (
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(team?._id);
@@ -218,7 +217,7 @@ const TeamPage: React.FC<TeamPageProps> = () => {
                           </div>
                         </div>
 
-                        {user?.id === team.owner._id && (
+                        {user?._id === team.owner._id && (
                           <button
                             onClick={() => handleRemoveMember(member.user._id)}
                             disabled={removingMemberId === member.user._id}
@@ -243,7 +242,7 @@ const TeamPage: React.FC<TeamPageProps> = () => {
             )}
 
             {/* Danger Zone */}
-            {user?.id === team?.owner?._id && (
+            {user?._id === team?.owner?._id && (
               <div
                 className={`mt-10 flex flex-col justify-center items-center p-6 border-2 rounded-xl text-center ${
                   darkMode ? "bg-red-500 border-red-700" : "bg-red-50 border-red-200"

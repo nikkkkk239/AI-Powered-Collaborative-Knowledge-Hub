@@ -3,9 +3,14 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import "./index.css"
 import { ThemeProvider } from './context/ThemeContext.tsx';
+import { SocketProvider } from './context/SocketContext.tsx';
 
 createRoot(document.getElementById('root')!).render(
-    <ThemeProvider><App /></ThemeProvider>
+    <ThemeProvider>
+        <SocketProvider>
+            <App />
+        </SocketProvider>
+    </ThemeProvider>
     
 
 );

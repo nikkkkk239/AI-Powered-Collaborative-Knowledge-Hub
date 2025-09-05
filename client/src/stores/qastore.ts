@@ -21,12 +21,16 @@ interface QAStore {
   error: string | null;
   askQuestion: (question: string , token : string) => Promise<void>;
   fetchQuestions : (token:string)=>Promise<void>;
+  addQnA : (qna : QA)=>void;
 }
 
 export const useQAStore = create<QAStore>((set, get) => ({
   qaList: [],
   isProcessing: false,
   error: null,
+  addQnA : (qna : QA)=>{
+    set((state)=>({qaList : [qna,...state.qaList]}))
+  },
 
   askQuestion: async (question: string , token : string) => {
 
