@@ -10,7 +10,9 @@ export interface User {
   role: 'user' | 'admin';
   hasGeminiKey: boolean;
   teamId : string | null;
+  geminiKey : string;
 }
+
 interface PopulatedUser{
   _id: string;
   name: string;
@@ -137,7 +139,10 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(error.message);
           }
           const res = await response.json();
-          set({ team : res.team , user : res.user });
+          set((state) => ({
+            team: res.team,
+            user: state.user ? { ...state.user, ...res.user } : res.user,
+          }));
 
         } catch (error) {
             console.log("Error in handleCreateTeam : " , error);
@@ -162,7 +167,10 @@ export const useAuthStore = create<AuthState>()(
           }
 
           const res = await response.json();
-          set({ team : res.team , user: res.user });
+          set((state) => ({
+            team: res.team,
+            user: state.user ? { ...state.user, ...res.user } : res.user,
+          }));
         } catch (error : any) {
           console.log("Error in joinTeam :" , error);
           toast.error("Failed to join team");

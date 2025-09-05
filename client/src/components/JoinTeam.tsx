@@ -160,3 +160,4 @@ const JoinTeam: React.FC = () => {
 };
 
 export default JoinTeam;
+
