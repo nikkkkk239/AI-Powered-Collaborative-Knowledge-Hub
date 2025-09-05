@@ -118,6 +118,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         localStorage.setItem("auth-storage", "");
+        localStorage.setItem("theme", "light");
         set({ user: null, token: null });
       },
       createTeam : async(data : {name : string , description?:string})=>{
