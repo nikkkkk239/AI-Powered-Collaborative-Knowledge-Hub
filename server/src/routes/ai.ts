@@ -74,7 +74,7 @@ router.post("/search", authenticate, async (req: AuthRequest, res) => {
     const queryEmbedding = await getEmbedding(apiKey, body);
 
     // fetch all docs with embeddings
-    const docs = await Document.find({ embedding: { $exists: true, $ne: [] } }).populate(
+    const docs = await Document.find({ embedding: { $exists: true, $ne: [] } , teamId :req?.user?.teamId }).populate(
       "createdBy",
       "name email"
     );

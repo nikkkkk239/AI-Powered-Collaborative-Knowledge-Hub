@@ -15,16 +15,12 @@ import { Toaster } from 'react-hot-toast';
 import { Layout } from './components/Layout';
 
 import { SocketListener } from './components/SocketListner';
+import DocumentEditPage from './pages/DocumentEditPage';
 
 function App() {
   const { user,team } = useAuthStore();
   console.log("User : " , user);
   console.log("Team : " , team);
-
-
-
-  
-
   
 
   return (
@@ -58,6 +54,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Search />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/documents/:documentId/edit"
+            element={
+              <ProtectedRoute>
+                <DocumentEditPage />
               </ProtectedRoute>
             }
           />

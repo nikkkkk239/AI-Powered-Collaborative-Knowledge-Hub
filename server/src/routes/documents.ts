@@ -2,14 +2,22 @@ import express from 'express';
 import Document from '../models/Document';
 import User from '../models/User';
 import { authenticate, AuthRequest } from '../middleware/auth';
-import { ObjectId } from 'mongoose';
 import rateLimit from 'express-rate-limit';
 import Team from '../models/Team';
 import redisClient from '../client';
 import { getEmbedding } from '../lib/embedding';
+import mongoose from 'mongoose';
+
+// Utility: Extract plain text from Quill Delta JSON
+function extractPlainText(delta: any): string {
+  if (!Array.isArray(delta)) return '';
+  return delta
+    .map(op => (typeof op.insert === 'string' ? op.insert : ''))
+    .join('');
+}
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
+  windowMs: 15 * 60 * 1000,
   max: 100,
   message: "Too many requests, please try again later.",
   handler: (req, res) => {
@@ -21,8 +29,10 @@ const limiter = rateLimit({
 
 const router = express.Router();
 
-// Get all documents
-router.get('/' , limiter, authenticate, async (req: AuthRequest, res) => {
+/**
+ * Get all documents
+ */
+router.get('/', limiter, authenticate, async (req: AuthRequest, res) => {
   try {
     const { search, tags, page = 1, limit = 10 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
@@ -43,7 +53,7 @@ router.get('/' , limiter, authenticate, async (req: AuthRequest, res) => {
     }
 
     const documents = await Document.find(query)
-      .populate('createdBy', 'name email ')
+      .populate('createdBy', 'name email')
       .sort({ updatedAt: -1 })
       .skip(skip)
       .limit(Number(limit));
@@ -64,19 +74,20 @@ router.get('/' , limiter, authenticate, async (req: AuthRequest, res) => {
   }
 });
 
-
-// Get document by ID
+/**
+ * Get document by ID
+ */
 router.get('/:id', authenticate, async (req: AuthRequest, res) => {
   try {
     const document = await Document.findById(req.params.id)
       .populate('createdBy', 'name email')
-      .populate('versions.updatedBy','name email');
+      .populate('versions.updatedBy', 'name email');
 
     if (!document) {
       return res.status(404).json({ message: 'Document not found' });
     }
     if (document.teamId.toString() !== req?.user?.teamId?.toString()) {
-        return res.status(403).json({ message: "Not in your team" });
+      return res.status(403).json({ message: "Not in your team" });
     }
 
     res.json(document);
@@ -85,60 +96,59 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
-
-// Create document
+/**
+ * Create document
+ */
 router.post('/', authenticate, async (req: AuthRequest, res) => {
   try {
-    const { title, content , summary, tags = [] } = req.body;
+    const { title, content, summary, tags = [] } = req.body;
     const user = req.user!;
 
     if (!user.teamId) {
       return res.status(400).json({ message: "User must belong to a team" });
     }
 
-    const embedding = await getEmbedding(process.env.EMBEDDING_KEY!, `${title}\n${content}`);
-
+    // Extract plain text from Quill JSON for embeddings
+    const plainText = extractPlainText(content);
+    const embedding = await getEmbedding(process.env.EMBEDDING_KEY!, `${title}\n${plainText}`);
 
     const document = new Document({
       title,
-      content,
+      content, // Quill Delta JSON
       tags,
       createdBy: user._id,
-      summary : summary ? summary : "",
-      teamId: user.teamId,   // 👈 attach team here
+      summary: summary || "",
+      teamId: user.teamId,
       versions: [],
       embedding
     });
+
     const team = await Team.findById(user.teamId);
-
-
-    
-
-    if(!team){
-      return res.status(404).json({message : "Team Not Found."});
-    }
+    if (!team) return res.status(404).json({ message: "Team Not Found." });
 
     team.recentActivities.push({
-      docName : title,
-      activityType : "create",
-      user:user._id,
+      docName: title,
+      activityType: "create",
+      user: user._id as mongoose.Types.ObjectId,
       date: new Date()
-    })
-
+    });
     if (team.recentActivities.length > 5) {
       team.recentActivities = team.recentActivities.slice(-5);
     }
 
     await team.save();
-    await team.populate("recentActivities.user", "name email")
-    await redisClient.publish("team:activity",JSON.stringify({activity : team.recentActivities[team.recentActivities.length - 1] , teamId : team._id}));
+    await team.populate("recentActivities.user", "name email");
+    await redisClient.publish("team:activity", JSON.stringify({
+      activity: team.recentActivities[team.recentActivities.length - 1],
+      teamId: team._id
+    }));
 
     await document.save();
     await document.populate('createdBy', 'name email');
     await redisClient.publish("document:new", JSON.stringify({
-    teamId: team._id,
-    document
-  }));
+      teamId: team._id,
+      document
+    }));
 
     res.status(201).json(document);
   } catch (error: any) {
@@ -146,42 +156,40 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
-
-// Update document
+/**
+ * Update document
+ */
 router.put('/:id', authenticate, async (req: AuthRequest, res) => {
   try {
     const { title, content, tags, summary } = req.body;
-    const userId = req.user!._id;
     const user = req.user!;
 
     const document = await Document.findById(req.params.id);
-    if (!document) {
-      return res.status(404).json({ message: 'Document not found' });
+    if (!document) return res.status(404).json({ message: 'Document not found' });
+
+    if (document.teamId.toString() !== user.teamId?.toString()) {
+      return res.status(403).json({ message: "Not in your team" });
     }
 
-    // Check permissions
-    if (document.teamId.toString() !== req?.user?.teamId?.toString()) {
-        return res.status(403).json({ message: "Not in your team" });
-    }
-    const embedding = await getEmbedding(process.env.EMBEDDING_KEY!, `${title}\n${content}`);
+    // Prepare embedding from plain text
+    const plainText = content ? extractPlainText(content) : extractPlainText(document.content);
+    const embedding = await getEmbedding(process.env.EMBEDDING_KEY!, `${title || document.title}\n${plainText}`);
 
-
-    // Create new version
+    // Save current state as a new version
     document.versions.push({
-      title : document.title,
+      title: document.title,
       content: document.content,
       summary: document.summary,
       tags: document.tags,
-      teamId : document.teamId,
-      updatedBy: userId as any,
+      teamId: document.teamId,
+      updatedBy: user._id as mongoose.Types.ObjectId,
       updatedAt: new Date()
     });
-
     if (document.versions.length > 5) {
       document.versions = document.versions.slice(-5);
     }
 
-    // Update document
+    // Update doc
     document.title = title || document.title;
     document.content = content || document.content;
     document.tags = tags || document.tags;
@@ -189,28 +197,27 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
     document.embedding = embedding || document.embedding;
 
     const team = await Team.findById(user.teamId);
-
-    if(!team){
-      return res.status(404).json({message : "Team Not Found."});
-    }
+    if (!team) return res.status(404).json({ message: "Team Not Found." });
 
     team.recentActivities.push({
-      docName:title || document.title,
-      activityType : "update",
-      user:user._id,
+      docName: title || document.title,
+      activityType: "update",
+      user: user._id as mongoose.Types.ObjectId,
       date: new Date()
-    })
-
+    });
     if (team.recentActivities.length > 5) {
       team.recentActivities = team.recentActivities.slice(-5);
     }
-    await team.save();
-    await team.populate("recentActivities.user", "name email")
-    await redisClient.publish("team:activity",JSON.stringify({activity : team.recentActivities[team.recentActivities.length - 1] , teamId : team._id}));
 
+    await team.save();
+    await team.populate("recentActivities.user", "name email");
+    await redisClient.publish("team:activity", JSON.stringify({
+      activity: team.recentActivities[team.recentActivities.length - 1],
+      teamId: team._id
+    }));
 
     await document.save();
-    await document.populate('versions.updatedBy','name email');
+    await document.populate('versions.updatedBy', 'name email');
     await redisClient.publish("document:update", JSON.stringify({
       teamId: team._id,
       document
@@ -222,69 +229,55 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
+/**
+ * Revert document
+ */
 router.put('/revert/:id', authenticate, async (req: AuthRequest, res) => {
   try {
-    const { title, content, tags, summary } = req.body;
-    const userId = req.user!._id;
+    const { versionIndex } = req.body; // safer than matching on content/title
     const user = req.user!;
 
     const document = await Document.findById(req.params.id);
-    if (!document) {
-      return res.status(404).json({ message: 'Document not found' });
-    }
-
-    if (document.teamId.toString() !== req?.user?.teamId?.toString()) {
+    if (!document) return res.status(404).json({ message: 'Document not found' });
+    if (document.teamId.toString() !== user.teamId?.toString()) {
       return res.status(403).json({ message: "Not in your team" });
     }
 
-    // 👉 Find the version the user clicked on
-    const targetVersionIndex = document.versions.findIndex(
-      v =>
-        v.title === title &&
-        v.content === content &&
-        v.summary === summary &&
-        JSON.stringify(v.tags) === JSON.stringify(tags)
-    );
-
-    if (targetVersionIndex === -1) {
-      return res.status(404).json({ message: "Version not found" });
+    if (versionIndex == null || versionIndex < 0 || versionIndex >= document.versions.length) {
+      return res.status(400).json({ message: "Invalid version index" });
     }
 
-    const targetVersion = document.versions[targetVersionIndex];
+    const targetVersion = document.versions[versionIndex];
 
-    // 👉 Push current doc as new version (before overwriting)
+    // Save current doc as version
     document.versions.push({
       title: document.title,
       content: document.content,
       summary: document.summary,
       tags: document.tags,
       teamId: document.teamId,
-      updatedBy: userId as any,
+      updatedBy: user._id as mongoose.Types.ObjectId,
       updatedAt: new Date(),
     });
 
-    // 👉 Overwrite doc with selected version
+    // Overwrite with target version
     document.title = targetVersion.title;
     document.content = targetVersion.content;
     document.summary = targetVersion.summary;
     document.tags = targetVersion.tags;
 
-    // 👉 Remove that version from versions[]
-    document.versions.splice(targetVersionIndex, 1);
-
     if (document.versions.length > 5) {
       document.versions = document.versions.slice(-5);
     }
 
-    // update team activities
     const team = await Team.findById(user.teamId);
     if (!team) return res.status(404).json({ message: "Team Not Found." });
 
     team.recentActivities.push({
       docName: document.title,
       activityType: "update",
-      user: user._id,
-      date: new Date(),
+      user: user._id as mongoose.Types.ObjectId,
+      date: new Date()
     });
     if (team.recentActivities.length > 5) {
       team.recentActivities = team.recentActivities.slice(-5);
@@ -292,24 +285,17 @@ router.put('/revert/:id', authenticate, async (req: AuthRequest, res) => {
 
     await team.save();
     await team.populate("recentActivities.user", "name email");
-    await redisClient.publish(
-      "team:activity",
-      JSON.stringify({
-        activity: team.recentActivities[team.recentActivities.length - 1],
-        teamId: team._id,
-      })
-    );
+    await redisClient.publish("team:activity", JSON.stringify({
+      activity: team.recentActivities[team.recentActivities.length - 1],
+      teamId: team._id
+    }));
 
     await document.save();
     await document.populate("versions.updatedBy", "name email");
-
-    await redisClient.publish(
-      "document:update",
-      JSON.stringify({
-        teamId: team._id,
-        document,
-      })
-    );
+    await redisClient.publish("document:update", JSON.stringify({
+      teamId: team._id,
+      document
+    }));
 
     res.json(document);
   } catch (error: any) {
@@ -317,45 +303,41 @@ router.put('/revert/:id', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
-
-// Delete document
+/**
+ * Delete document
+ */
 router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
   try {
-    const userId= req.user!._id;
     const user = req.user!;
-
     const document = await Document.findById(req.params.id);
-    if (!document) {
-      return res.status(404).json({ message: 'Document not found' });
-    }
-
-    if (document.teamId.toString() !== req?.user?.teamId?.toString()) {
-        return res.status(403).json({ message: "Not in your team" });
+    if (!document) return res.status(404).json({ message: 'Document not found' });
+    if (document.teamId.toString() !== user.teamId?.toString()) {
+      return res.status(403).json({ message: "Not in your team" });
     }
 
     const team = await Team.findById(user.teamId);
-
-    if(!team){
-      return res.status(404).json({message : "Team Not Found."});
-    }
+    if (!team) return res.status(404).json({ message: "Team Not Found." });
 
     team.recentActivities.push({
-      docName : document.title,
-      activityType : "delete",
-      user:user._id,
+      docName: document.title,
+      activityType: "delete",
+      user: user._id as mongoose.Types.ObjectId,
       date: new Date()
-    })
-
+    });
     if (team.recentActivities.length > 5) {
       team.recentActivities = team.recentActivities.slice(-5);
     }
+
     await team.save();
-    await team.populate("recentActivities.user", "name email")
-    await redisClient.publish("team:activity",JSON.stringify({activity : team.recentActivities[team.recentActivities.length - 1] , teamId : team._id}));
+    await team.populate("recentActivities.user", "name email");
+    await redisClient.publish("team:activity", JSON.stringify({
+      activity: team.recentActivities[team.recentActivities.length - 1],
+      teamId: team._id
+    }));
 
     await redisClient.publish("document:delete", JSON.stringify({
       teamId: team._id,
-      documentId : req.params.id
+      documentId: req.params.id
     }));
 
     await Document.findByIdAndDelete(req.params.id);
@@ -365,15 +347,16 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
-// Get recent activity
+/**
+ * Get recent activity
+ */
 router.get('/activity/recent', authenticate, async (req: AuthRequest, res) => {
   try {
-      const team = await Team.findById(req?.user?.teamId).populate("recentActivities.user", "name email");
-      if(!team){
-        return res.status(404).json({message : "Team Not Found."});
-      }
+    const team = await Team.findById(req?.user?.teamId)
+      .populate("recentActivities.user", "name email");
+    if (!team) return res.status(404).json({ message: "Team Not Found." });
 
-    res.json({recentActivity : team.recentActivities});
+    res.json({ recentActivity: team.recentActivities });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

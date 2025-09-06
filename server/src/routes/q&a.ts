@@ -15,6 +15,10 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
     const userId = req.user!._id;
     const teamId = req.user!.teamId;
 
+    if (!question) {
+      return res.status(400).json({ message: "Question is required" });
+    }
+
    const docs = await Document.find({ teamId, $text: { $search: question } },{ score: { $meta: "textScore" } }).sort({ score: { $meta: "textScore" } }).limit(5);
     let answer;
     

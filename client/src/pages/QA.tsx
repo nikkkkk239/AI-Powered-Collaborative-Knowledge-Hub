@@ -165,7 +165,7 @@ export const QA: React.FC = () => {
                   </div>
                   <div className={`${darkMode ? "bg-white/10 border-white text-white" : "bg-gray-50 text-black"} flex-1 rounded-xl p-4`}>
                     <div className="prose prose-sm max-w-none">
-                      <p className="whitespace-pre-wrap">{qa.answer ?? "No answer"}</p>
+                      <p className="whitespace-pre-wrap text-white/70">{qa.answer ?? "No answer"}</p>
                     </div>
                   </div>
                 </div>

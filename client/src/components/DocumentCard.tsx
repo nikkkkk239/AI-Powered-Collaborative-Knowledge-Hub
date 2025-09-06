@@ -4,9 +4,6 @@ import {
   Tag,
   User,
   Calendar,
-  Trash2,
-  Edit,
-  Sparkles,
 } from "lucide-react";
 import { useAuthStore } from "../stores/authStore";
 import { useAIStore } from "../stores/aiStore";
@@ -33,21 +30,26 @@ interface DocumentCardProps {
   onDelete: (id: string) => void;
   onSummarize: (id: string) => void;
   onGenerateTags: (id: string) => void;
-  darkMode : boolean;
+  darkMode: boolean;
 }
+
 export const DocumentCard: React.FC<DocumentCardProps> = ({
   document,
-  onEdit,
-  onDelete,
-  onSummarize,
-  onGenerateTags,
   darkMode
 }) => {
   const { user } = useAuthStore();
   const { isProcessing } = useAIStore();
   const navigate = useNavigate();
 
-  const canEdit = user?.role === "admin" || document.createdBy._id === user?._id;
+  const shortSummary =
+    document.summary?.length > 120
+      ? document.summary.substring(0, 120) + "..."
+      : document.summary;
+
+  const shortContent = document.content
+    ? document.content.replace(/<[^>]+>/g, "").substring(0, 80) + "..."
+    : "";
+
   const hasAIAccess = user?.hasGeminiKey;
 
   return (
@@ -63,21 +65,39 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
           <div className="flex items-start gap-3">
-            <div className={`${darkMode ? "bg-gray-900" : "bg-blue-100"} p-2 rounded-lg`}>
-              <FileText className={`${darkMode ? "text-blue-400" : "text-blue-600"} h-6 w-6`} />
+            <div
+              className={`${
+                darkMode ? "bg-gray-900" : "bg-blue-100"
+              } p-2 rounded-lg`}
+            >
+              <FileText
+                className={`${
+                  darkMode ? "text-blue-400" : "text-blue-600"
+                } h-6 w-6`}
+              />
             </div>
             <div>
-              <h3 className={`${darkMode ? "text-white" : "text-gray-900"} text-lg font-semibold`}>
+              <h3
+                className={`${
+                  darkMode ? "text-white" : "text-gray-900"
+                } text-lg font-semibold`}
+              >
                 {document.title}
               </h3>
-              <div className={`flex flex-wrap gap-4 text-sm mt-1 ${darkMode ? "text-gray-300" : "text-gray-500"}`}>
+              <div
+                className={`flex flex-wrap gap-4 text-sm mt-1 ${
+                  darkMode ? "text-gray-300" : "text-gray-500"
+                }`}
+              >
                 <div className="flex items-center gap-1">
                   <User className="h-4 w-4" />
                   <span>{document.createdBy.name}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  <span>{new Date(document.updatedAt).toLocaleDateString()}</span>
+                  <span>
+                    {new Date(document.updatedAt).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
             </div>
@@ -85,27 +105,43 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
         </div>
 
         {/* Summary */}
-        {document.summary && (
-          <div className={`mb-4 p-3 rounded-lg border ${
-            darkMode ? "bg-white/10 border-black" : "bg-gray-50 border-gray-200"
-          }`}>
-            <p className={`${darkMode ? "text-white" : "text-gray-700"} text-sm leading-relaxed`}>
-              {document.summary}
+        {shortSummary && (
+          <div
+            className={`mb-3 p-3 rounded-lg border ${
+              darkMode
+                ? "bg-white/10 border-black"
+                : "bg-gray-50 border-gray-200"
+            }`}
+          >
+            <p
+              className={`${
+                darkMode ? "text-white" : "text-gray-700"
+              } text-sm leading-relaxed`}
+            >
+              {shortSummary}
             </p>
           </div>
         )}
 
         {/* Content preview */}
-        <div className="mb-4 flex-1">
-          <p className={`${darkMode ? "text-gray-200" : "text-gray-600"} text-sm line-clamp-3 leading-relaxed`}>
-            {document.content.substring(0, 200)}...
+        {shortContent && (
+          <p
+            className={`${
+              darkMode ? "text-gray-400" : "text-gray-600"
+            } text-xs mb-4 italic`}
+          >
+            {shortContent}
           </p>
-        </div>
+        )}
 
         {/* Tags */}
         {document.tags.length > 0 && (
           <div className="flex items-start gap-2 mb-4 flex-wrap">
-            <Tag className={`${darkMode ? "text-gray-400" : "text-gray-400"} h-4 w-4 mt-1`} />
+            <Tag
+              className={`${
+                darkMode ? "text-gray-400" : "text-gray-400"
+              } h-4 w-4 mt-1`}
+            />
             <div className="flex flex-wrap gap-2">
               {document.tags.map((tag, index) => (
                 <span
@@ -125,7 +161,11 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
 
         {/* AI warning */}
         {!hasAIAccess && (
-          <p className={`${darkMode ? "text-yellow-400" : "text-yellow-600"} text-xs mt-2`}>
+          <p
+            className={`${
+              darkMode ? "text-yellow-400" : "text-yellow-600"
+            } text-xs mt-2`}
+          >
             Add your Gemini API key in profile settings to use AI features
           </p>
         )}

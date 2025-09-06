@@ -4,6 +4,7 @@ import Team from "../models/Team";
 import User from "../models/User";
 import { IUser } from "../models/User";
 import { ObjectId } from "mongoose";
+import Document from "../models/Document";
 import redisClient from "../client"
 
 interface AuthRequest extends Request {
@@ -164,6 +165,8 @@ export const deleteTeam = async (req: AuthRequest, res: Response) => {
     await User.updateMany({
       teamId : teamId
     },{$set:{teamId : null}});
+
+    await Document.deleteMany({ teamId });
 
     await Team.findByIdAndDelete(teamId);
 

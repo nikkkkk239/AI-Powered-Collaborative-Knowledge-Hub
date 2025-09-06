@@ -72,7 +72,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="flex items-center space-x-8">
               <Link to="/dashboard" className="flex items-center space-x-2">
                 <img src="logo.jpg" alt="Logo" className="w-10 h-15 object-cover"/>
-                <h1 className={`text-2xl font-bold ${dark ? "text-white" : "text-blue-700"}`}>HiveMind</h1>
+                <h1 className={`text-2xl font-bold text-blue-500`}>HiveMind</h1>
               </Link>
 
               <nav className="hidden md:flex space-x-6">

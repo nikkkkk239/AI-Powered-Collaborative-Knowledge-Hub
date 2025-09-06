@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@plugin "tailwind-scrollbar-hide";
 
 /* --- Slide In From Top --- */
 @keyframes slide-down-in {
@@ -151,4 +153,47 @@
 .animate-gradient {
   background-size: 200% 200%;
   animation: gradientShift 4s ease infinite;
+}
+
+.ql-toolbar button svg {
+  @apply w-10 h-10; /* makes them larger */
+}
+
+.ql-editor.ql-blank::before {
+  color: black; 
+}
+.dark .ql-editor.ql-blank::before {
+  color: rgba(255, 255, 255, 0.503); /* Tailwind gray-400 */
+}
+.shadow-light-white{
+box-shadow: rgba(142, 141, 141, 0.12) 0px 1px 3px, rgba(145, 144, 144, 0.24) 0px 1px 2px;
+}
+
+
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: green;
+  border-radius: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: green;
+  border-radius: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: green;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }

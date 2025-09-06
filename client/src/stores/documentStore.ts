@@ -4,10 +4,11 @@ import type { User } from './authStore';
 interface Document {
   _id: string;
   title: string;
-  content: string;
+  // content can be HTML string or Quill Delta JSON
+  content: string | any;
   tags: string[];
-  summary: string;
-  teamId : string;
+  summary?: string;
+  teamId: string;
   createdBy: {
     _id: string;
     name: string;
@@ -16,11 +17,11 @@ interface Document {
   createdAt: string;
   updatedAt: string;
   versions?: Array<{
-    title:string;
-    content: string;
-    summary: string;
+    title: string;
+    content: string | any;
+    summary?: string;
     tags: string[];
-    teamId : string;
+    teamId: string;
     updatedAt: string;
     updatedBy: {
       _id: string;
@@ -28,13 +29,14 @@ interface Document {
       email: string;
     };
   }>;
+  embedding?: number[];
 }
 
-interface Activity{
-  docName : string;
-  date : Date;
-  user:User,
-  activityType : "create" | "delete" | "update";
+interface Activity {
+  docName: string;
+  date: Date;
+  user: User;
+  activityType: 'create' | 'delete' | 'update';
 }
 
 interface DocumentState {
@@ -43,9 +45,9 @@ interface DocumentState {
   recentActivity: Activity[];
   isLoading: boolean;
   searchQuery: string;
-  fetchingRecent : boolean;
+  fetchingRecent: boolean;
   selectedTags: string[];
-  
+
   // Actions
   fetchDocuments: (token: string, params?: any) => Promise<void>;
   fetchDocument: (token: string, id: string) => Promise<void>;
@@ -56,8 +58,8 @@ interface DocumentState {
   setSearchQuery: (query: string) => void;
   setSelectedTags: (tags: string[]) => void;
   setLoading: (loading: boolean) => void;
-  addDocument : (doc : Document)=>void;
-  addActivity : (activity:Activity)=>void;
+  addDocument: (doc: Document) => void;
+  addActivity: (activity: Activity) => void;
 }
 
 export const useDocumentStore = create<DocumentState>((set, get) => ({
@@ -66,34 +68,33 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   recentActivity: [],
   isLoading: false,
   searchQuery: '',
-  fetchingRecent : true,
+  fetchingRecent: true,
   selectedTags: [],
+
   addDocument: (doc) =>
     set((state) => ({ documents: [doc, ...state.documents] })),
   addActivity: (activity) =>
     set((state) => {
       const updated = [activity, ...state.recentActivity];
-
-      // keep only latest 5
-      return { recentActivity: updated.slice(0, 5) };
+      return { recentActivity: updated.slice(0, 5) }; // keep latest 5
     }),
-
-  
 
   fetchDocuments: async (token: string, params = {}) => {
     set({ isLoading: true });
     try {
       const queryParams = new URLSearchParams(params);
-      const response = await fetch(`http://localhost:5000/api/documents?${queryParams}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await fetch(
+        `http://localhost:5000/api/documents?${queryParams}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (!response.ok) throw new Error('Failed to fetch documents');
-
       const data = await response.json();
-      
+
       set({ documents: data.documents });
-      console.log("Documents : " , get().documents);
+      console.log('Documents:', get().documents);
     } finally {
       set({ isLoading: false });
     }
@@ -102,12 +103,14 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   fetchDocument: async (token: string, id: string) => {
     set({ isLoading: true });
     try {
-      const response = await fetch(`http://localhost:5000/api/documents/${id}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await fetch(
+        `http://localhost:5000/api/documents/${id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (!response.ok) throw new Error('Failed to fetch document');
-
       const document = await response.json();
       set({ currentDocument: document });
     } finally {
@@ -120,7 +123,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
     });
@@ -131,7 +134,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     }
 
     const document = await response.json();
-    set(state => ({ documents: [document, ...state.documents] }));
+    set((state) => ({ documents: [document, ...state.documents] }));
     return document;
   },
 
@@ -140,7 +143,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
     });
@@ -151,9 +154,11 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     }
 
     const document = await response.json();
-    set(state => ({
-      documents: state.documents.map(doc => doc._id === id ? document : doc),
-      currentDocument: document
+    set((state) => ({
+      documents: state.documents.map((doc) =>
+        doc._id === id ? document : doc
+      ),
+      currentDocument: document,
     }));
     return document;
   },
@@ -161,7 +166,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   deleteDocument: async (token: string, id: string) => {
     const response = await fetch(`http://localhost:5000/api/documents/${id}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (!response.ok) {
@@ -169,37 +174,37 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       throw new Error(error.message);
     }
 
-    set(state => ({
-      documents: state.documents.filter(doc => doc._id !== id)
+    set((state) => ({
+      documents: state.documents.filter((doc) => doc._id !== id),
     }));
   },
 
   fetchRecentActivity: async (token: string) => {
-  try {
-    const response = await fetch('http://localhost:5000/api/documents/activity/recent', {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
+    try {
+      const response = await fetch(
+        'http://localhost:5000/api/documents/activity/recent',
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-    if (!response.ok) throw new Error('Failed to fetch recent activity');
+      if (!response.ok) throw new Error('Failed to fetch recent activity');
+      const res = await response.json();
 
-    const res = await response.json();
-    
-    console.log("Activities before sort:", res.recentActivity);
+      console.log('Activities before sort:', res.recentActivity);
 
+      const sortedActivities = res.recentActivity.sort(
+        (a: any, b: any) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
 
-    // sort by `data` (newest first)
-    const sortedActivities = res.recentActivity.sort(
-      (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-
-    set({ recentActivity: sortedActivities });
-  } catch (error) {
-    console.error('Error fetching recent activity:', error);
-  } finally {
-    set({ fetchingRecent: false });
-  }
-},
-
+      set({ recentActivity: sortedActivities });
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+    } finally {
+      set({ fetchingRecent: false });
+    }
+  },
 
   setSearchQuery: (query: string) => set({ searchQuery: query }),
   setSelectedTags: (tags: string[]) => set({ selectedTags: tags }),

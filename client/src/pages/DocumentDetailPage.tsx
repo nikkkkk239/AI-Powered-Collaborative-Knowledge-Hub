@@ -1,10 +1,10 @@
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Dialog } from "@headlessui/react"; 
-import { X } from "lucide-react";
-import { useAuthStore } from "../stores/authStore";
-import { MoveLeftIcon, Sparkles, Tag } from "lucide-react";
+import { Dialog } from "@headlessui/react";
+import { X, MoveLeftIcon, Sparkles, Tag } from "lucide-react";
 import TextareaAutosize from "react-textarea-autosize";
+import { useAuthStore } from "../stores/authStore";
 import { useTheme } from "../context/ThemeContext";
 
 const DocumentDetailsPage = () => {
@@ -12,14 +12,15 @@ const DocumentDetailsPage = () => {
   const navigate = useNavigate();
   const { user, token } = useAuthStore();
   const { theme } = useTheme();
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const darkMode = theme === "dark";
 
   const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isProcessing , setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [zoom , setZoom] = useState(1)
   const [editing, setEditing] = useState(false);
-
-  const [isSaving , setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<any | null>(null);
   const [editForm, setEditForm] = useState({
     title: "",
@@ -29,14 +30,26 @@ const DocumentDetailsPage = () => {
   });
 
   useEffect(() => {
+  const handleResize = () => {
+    if (window.innerWidth < 1024) { // e.g. collapse below lg breakpoint
+      setIsCollapsed(false);
+    } else {
+      setIsCollapsed(false);
+    }
+  };
+
+  handleResize(); // run once on mount
+  window.addEventListener("resize", handleResize);
+
+  return () => window.removeEventListener("resize", handleResize);
+}, []);
+
+  useEffect(() => {
     const fetchDoc = async () => {
       try {
         const res = await fetch(`http://localhost:5000/api/documents/${documentId}`, {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
         setDocument(data);
@@ -56,14 +69,11 @@ const DocumentDetailsPage = () => {
   }, [documentId, token]);
 
   const handleUpdate = async () => {
-    setIsSaving(true)
+    setIsSaving(true);
     try {
       const res = await fetch(`http://localhost:5000/api/documents/${documentId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(editForm),
       });
       const updated = await res.json();
@@ -71,100 +81,33 @@ const DocumentDetailsPage = () => {
       setEditing(false);
     } catch (err) {
       console.error("Update failed:", err);
-    }finally{
+    } finally {
       setIsSaving(false);
     }
   };
 
-  const handleRevert = async()=>{
+  const handleRevert = async () => {
+    if (!selectedVersion) return;
     setLoading(true);
     try {
       const res = await fetch(`http://localhost:5000/api/documents/revert/${documentId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({title : selectedVersion.title , content : selectedVersion.content , tags : selectedVersion.tags , summary : selectedVersion.summary}),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          title: selectedVersion.title,
+          content: selectedVersion.content,
+          tags: selectedVersion.tags,
+          summary: selectedVersion.summary,
+        }),
       });
       const updated = await res.json();
       setDocument(updated);
-      setEditing(false);
-
+      setSelectedVersion(null);
     } catch (err) {
-      console.error("Update failed:", err);
-    }
-    finally{
+      console.error("Revert failed:", err);
+    } finally {
       setLoading(false);
     }
-    setSelectedVersion(null);
-  }
-  const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this document?")) return;
-    try {
-      await fetch(`http://localhost:5000/api/documents/${documentId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      navigate("/dashboard");
-    } catch (err) {
-      console.error("Delete failed:", err);
-    }
-  };
-
-  const handleGenerateTags = async () => {
-    setIsProcessing(true);
-    try {
-      const res = await fetch(`http://localhost:5000/api/ai/tags/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body:JSON.stringify({content : editForm.content , title:editForm.title})
-      });
-      const data = await res.json();
-      if (res.ok) setEditForm((prev) => ({ ...prev, tags: data.tags }));
-      else if (res.status === 503) alert("Gemini is currently overloaded. Please try again later.");
-    } catch (err) {
-      console.error("Error:", err);
-    } finally { setIsProcessing(false); }
-  };
-
-  const handleSummarize = async () => {
-    setIsProcessing(true)
-    try {
-      const res = await fetch(`http://localhost:5000/api/ai/summarize/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ content: editForm.content , title : editForm.title})
-      });
-      const data = await res.json();
-      if (res.ok) setEditForm((prev) => ({ ...prev, summary: data.summary }));
-      else if (res.status === 503) alert("Gemini is currently overloaded. Please try again later.");
-    } catch (err) {
-      console.error("Error:", err);
-    } finally { setIsProcessing(false); }
-  };
-
-  const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && e.currentTarget.value.trim()) {
-      setEditForm({
-        ...editForm,
-        tags: [...editForm.tags, e.currentTarget.value.trim()],
-      });
-      e.currentTarget.value = "";
-    }
-  };
-
-  const removeTag = (tag: string) => {
-    setEditForm({
-      ...editForm,
-      tags: editForm.tags.filter((t) => t !== tag),
-    });
   };
 
   const isChanged = useMemo(() => {
@@ -177,160 +120,130 @@ const DocumentDetailsPage = () => {
     );
   }, [editForm, document]);
 
-
   if (loading) return (
-    <div className={`text-center min-h-[100vh] flex min-w-[100vw] gap-5 items-center justify-center ${darkMode ? "bg-black text-white" : "bg-white text-black"}`}>
-      <div className={`animate-spin rounded-full h-10 w-10 border-b-2 ${darkMode ? "border-white" : "border-black"}`}></div>
-      <p className={`${darkMode ? "text-white" : "text-black"}`}>Loading...</p>
+    <div className={`flex min-h-screen items-center justify-center ${darkMode ? "bg-black text-white" : "bg-white text-black"}`}>
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-current"></div>
+      <p className="ml-3">Loading...</p>
     </div>
   );
-  if (!document) return <div className={`p-6 ${darkMode ? "text-white bg-black" : "text-black bg-white"}`}>Document not found</div>;
+
+  if (!document) return <div className={`p-6 ${darkMode ? "bg-black text-white" : "bg-white text-black"}`}>Document not found</div>;
 
   return (
-    <div className={`${darkMode ? "bg-black text-white" : "bg-black/1 text-black"} p-6 min-h-screen max-w-4xl mx-auto`}>
+    <div className={`${darkMode ? "bg-black text-white" : "bg-white text-black"} p-6 min-h-screen flex flex-col gap-6`}>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex flex-row items-center gap-5">
-          <MoveLeftIcon className="cursor-pointer" onClick={()=>navigate(-1)}/>
-          {editing ? (
-            <input
-              type="text"
-              value={editForm.title}
-              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-              className={`text-3xl font-bold border-b px-2 w-full ${darkMode ? "border-white text-white" : "border-black text-black"} focus:outline-none`}
-            />
-          ) : (
-            <h1 className={`text-3xl ${darkMode ? "text-blue-500" : "text-blue-700"} font-bold`}>{document.title}</h1>
-          )}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <MoveLeftIcon className="cursor-pointer" onClick={() => navigate("/dashboard")} />
+          <h1 className="text-3xl font-bold text-blue-500">{document.title}</h1>
         </div>
+        <div className="flex gap-2">
+          <button onClick={() => navigate(`/documents/${documentId}/edit`)} className="px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white">Edit</button>
+          <button onClick={() => {/* delete logic */}} className="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white">Delete</button>
+        </div>
+      </div>
 
-        <div className="flex gap-3">
-          {editing ? (
-            <>
-              <button
-                onClick={handleUpdate}
-                disabled={!isChanged}
-                className={`px-3 py-1 ${!isChanged ? "cursor-not-allowed" : "cursor-pointer"} rounded-lg text-white ${
-                  isChanged
-                    ? "bg-green-500 hover:bg-green-600"
-                    : "bg-gray-300 cursor-not-allowed"
-                }`}
-              >
-                {isSaving ?  <div className={`text-center gap-2 items-center justify-center flex`}>
-                <div className={`animate-spin rounded-full h-2 w-2 border-b-1 ${darkMode ? "border-white" : "border-black"}`}></div>
-                <p className={`${darkMode ? "text-white" : "text-black"}`}>Saving...</p>
-              </div> : "Save"
-                  }
-                
-              </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="px-3 py-1 bg-gray-400 text-white rounded-lg hover:bg-gray-500 cursor-pointer"
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <div className="flex gap-3">
-              <button
-                onClick={() => setEditing(true)}
-                className="px-4 cursor-pointer py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-all duration-200"
-              >
-                Edit
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-4 cursor-pointer py-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md hover:from-red-600 hover:to-red-700 active:scale-95 transition-all duration-200"
-              >
-                Delete
-              </button>
+      <div className="flex flex-col  lg:flex-row ">
+  {/* Left: Content full-page style */}
+<div className="flex-1 max-h-[calc(100vh-98px)] relative p-10 px-0 md:px-10 overflow-y-auto flex justify-center items-start">
+  <div
+    className={`prose max-w-[700px] min-h-[100vh] shadow-xl  w-full p-6 border rounded-lg
+      ${darkMode
+        ? "prose-invert border-white/30 bg-white/10  shadow-light-white text-white"
+        : "border-black/10 bg-white text-black"
+      }`} style={{ zoom: zoom }}
+    dangerouslySetInnerHTML={{ __html: document.content }}
+  />
+  <div className="absolute top-2 right-6 self-start flex flex-col gap-2 z-10 ml-20">
+    <button
+      onClick={() => setZoom((prev) => Math.min(prev + 0.1, 2))}
+      className="px-3 py-1 rounded cursor-pointer bg-blue-500 text-white hover:bg-blue-600"
+    >
+      +
+    </button>
+    <button
+      onClick={() => setZoom((prev) => Math.max(prev - 0.1, 0.5))}
+      className="px-3 py-1 rounded cursor-pointer bg-blue-500 text-white hover:bg-blue-600"
+    >
+      -
+    </button>
+  </div>
+  
+</div>
+
+
+
+  {/* Right: metadata */}
+{/* Right: metadata */}
+<div
+  className={`flex-shrink-0 flex flex-col border-l gap-4 pl-5 overflow-y-auto max-h-[calc(100vh-98px)] transition-all duration-300 relative ${darkMode && "border-white"} ${
+    isCollapsed ? "w-16" : "w-full lg:w-80"
+  }`}
+>
+  {/* Collapse button */}
+  <button
+    onClick={() => setIsCollapsed((prev) => !prev)}
+    className={`absolute top-2 hidden rounded-full hover:bg-black/20 transition-all duration-300 right-3 cursor-pointer w-8 h-8 lg:flex items-center justify-center ${darkMode && "text-white hover:bg-white/20"}`}
+  >
+    {isCollapsed ? <ChevronLeft /> : <ChevronRight/> }
+  </button>
+
+  {/* Tags */}
+  <div>
+    <h2 className={`${isCollapsed ? "-rotate-90 mt-20 rounded-2xl" : "rotate-0"} font-semibold mb-2 text-blue-500`}>Tags</h2>
+    {!isCollapsed && (
+      <div className="flex flex-wrap gap-2">
+        {document.tags?.map((tag: string, i: number) => (
+          <span key={i} className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+            {tag}
+          </span>
+        ))}
+      </div>
+    )}
+  </div>
+
+  {/* Summary */}
+  <div>
+    <h2 className={`${isCollapsed ? "-rotate-90 mt-20 rounded-2xl" : "rotate-0"} font-semibold mb-2 text-blue-500`}>Summary</h2>
+    {!isCollapsed && <p className={`italic ${darkMode ? "text-white/70" : "text-black"}`}>{document.summary || "No summary"}</p>}
+  </div>
+
+  {/* Version history */}
+  {document.versions?.length > 0 && !isCollapsed && (
+    <div className="overflow-y-auto relative">
+      <h2 className="font-semibold mb-4 text-blue-500">Versions</h2>
+      <div className="relative flex flex-col gap-6 pl-10">
+        {/* Vertical line */}
+        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-blue-500" />
+
+        {document.versions.map((v: any, i: number) => (
+          <div
+            key={i}
+            className="relative flex items-start cursor-pointer"
+            onClick={() => setSelectedVersion(v)}
+          >
+            {/* Circle on the line */}
+            <div className="absolute left-[-30px] w-4 h-4 bg-blue-500 rounded-full top-1/2 -translate-y-1/2" />
+
+            {/* Horizontal connector */}
+            <div className="absolute left-[-15px] top-1/2 -translate-y-1/2 w-4 h-0.5 bg-blue-500" />
+
+            <div className={`p-5 rounded-lg ${darkMode ? "hover:bg-white/20 border-white/20" : "hover:bg-black/5 border-black/15 border"} flex-1 ml-1`}>
+              <p className="text-lg">{new Date(v.updatedAt).toLocaleString()}</p>
+              <p className="text-xs">
+                Updated by: <span className="text-blue-500">{v.updatedBy?.name || "Unknown"}</span>
+              </p>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Tags */}
-      <div className="mb-4">
-        <h2 className={`text-lg font-semibold ${darkMode ? "text-blue-500" : "text-blue-700"} mb-2`}>Tags</h2>
-        {editing ? (
-          <div className="flex flex-wrap gap-2">
-            {editForm.tags.map((tag, i) => (
-              <span
-                key={i}
-                className={`${darkMode ? "bg-white/10 text-white" : "bg-blue-100 text-blue-700"} px-3 py-1 rounded-full flex items-center gap-2`}
-              >
-                {tag}
-                <button onClick={() => removeTag(tag)} className="text-sm text-red-500 hover:text-red-700 cursor-pointer">×</button>
-              </span>
-            ))}
-            <input
-              type="text"
-              onKeyDown={handleTagInput}
-              placeholder="Press Enter to add tag"
-              className={`border px-2 py-1 rounded-md text-sm ${darkMode ? "border-white text-white bg-black" : "border-black text-black bg-white"}`}
-            />
           </div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {document.tags?.map((tag: string, i: number) => (
-              <span key={i} className={`${darkMode ? "bg-white/10 text-white" : "bg-blue-100 text-blue-700"} px-3 py-1 rounded-full flex items-center gap-2`}>{tag}</span>
-            ))}
-          </div>
-        )}
+        ))}
       </div>
+    </div>
+  )}
+</div>
 
-      {/* Summary */}
-      <div className="mb-6">
-        <h2 className={`text-lg ${darkMode ? "text-blue-500" : "text-blue-700"} font-semibold mb-2`}>Summary</h2>
-        {editing ? (
-          <TextareaAutosize
-            minRows={1} maxRows={20}
-            value={editForm.summary}
-            onChange={(e) => setEditForm({ ...editForm, summary: e.target.value })}
-            className={`w-full border rounded-lg p-2 focus:outline-none ${darkMode ? "border-white text-white bg-black" : "border-black text-black bg-white"}`}
-          />
-        ) : (
-          <p className="italic">{document.summary || "No summary"}</p>
-        )}
-      </div>
+</div>
 
-      {/* Content */}
-      <div className={`shadow-sm rounded-xl p-6 border mb-6 ${darkMode ? "bg-black border-white/50" : "bg-white border-black"}`}>
-        <h2 className={`text-xl font-semibold ${darkMode ? "text-blue-500" : "text-blue-700"} mb-3`}>Content</h2>
-        {editing ? (
-          <TextareaAutosize
-            minRows={1} maxRows={50}
-            value={editForm.content}
-            onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
-            className={`w-full h-40 border rounded-lg p-2 focus:outline-none ${darkMode ? "border-white text-white bg-black" : "border-black text-black bg-white"}`}
-          />
-        ) : (
-          <p className="whitespace-pre-wrap">{document.content}</p>
-        )}
-      </div>
-
-      {/* Versions */}
-      {document?.versions?.length > 0 && !editing && (
-        <div className={`shadow-sm rounded-xl p-6 border mb-6 ${darkMode ? "bg-black border-white/50" : "bg-white border-black"}`}>
-          <h2 className={`text-xl font-semibold ${darkMode ? "text-blue-500" : "text-blue-700"} mb-1`}>Version History</h2>
-          <p className="mb-4 text-sm text-white/40">Revert Back to a previous version.</p>
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            {document?.versions?.map((v: any, i: number) => (
-              <div
-                key={i}
-                onClick={() => setSelectedVersion(v)}
-                className={`min-w-[250px] max-w-[400px] cursor-pointer rounded-xl p-4 shadow-sm border hover:shadow-md transition-all ${darkMode ? "bg-white/10 border-white/40" : "bg-blue-500 text-white border-black"}`}
-              >
-                <p className="text-sm font-medium">{new Date(v.updatedAt).toLocaleString()}</p>
-                <p className="text-xs mt-1">Updated by: {v.updatedBy?.name || "Unknown"}</p>
-                <p className="text-xs mt-2 line-clamp-2">{v.summary || "No summary"}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Modal */}
+      {/* Version Modal */}
       {selectedVersion && (
         <Dialog open={!!selectedVersion} onClose={() => setSelectedVersion(null)} className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
@@ -339,14 +252,15 @@ const DocumentDetailsPage = () => {
               <X className="h-6 w-6" />
             </button>
             <h3 className={`text-xl font-semibold mb-4 ${darkMode && "text-blue-500"}`}>Version Details</h3>
-
-            <h2 className="font-bold text-blue-500 mb-3 text-xl">{selectedVersion?.title}</h2>
+            <h2 className="font-bold text-blue-500 mb-3 text-xl">{selectedVersion.title}</h2>
             <p className="text-sm mb-2">Updated on: <span className="font-medium">{new Date(selectedVersion.updatedAt).toLocaleString()}</span></p>
             <p className="text-sm mb-4">Updated by: <span className="font-medium">{selectedVersion.updatedBy?.name || "Unknown"} ({selectedVersion.updatedBy?.email || "No email"})</span></p>
+
             <div className="mb-4">
               <h4 className={`text-lg font-medium ${darkMode && "text-blue-500"}`}>Summary</h4>
               <p className="italic">{selectedVersion.summary || "No summary"}</p>
             </div>
+
             <div className="mb-4">
               <h4 className={`text-lg font-medium ${darkMode && "text-blue-500"}`}>Tags</h4>
               <div className="flex flex-wrap gap-2 mt-1">
@@ -357,46 +271,23 @@ const DocumentDetailsPage = () => {
                 ) : (<p className="text-sm">No tags</p>)}
               </div>
             </div>
+
             <div>
               <h4 className={`text-lg font-medium mb-2 ${darkMode && "text-blue-500"}`}>Content</h4>
               <p className="whitespace-pre-wrap">{selectedVersion.content}</p>
             </div>
+
             <div className="w-full flex flex-col gap-2 items-center justify-center mt-3">
-              <button className="bg-blue-500 text-white hover:bg-blue-700 transition-all duration-150 px-4 py-2 rounded-2xl cursor-pointer" onClick={handleRevert}>Revert Back</button>
-              <p className="text-center text-white/60 text-sm">By clicking on revert back , you will get your version back.</p>
+              <button
+                className="bg-blue-500 text-white hover:bg-blue-700 transition-all duration-150 px-4 py-2 rounded-2xl cursor-pointer"
+                onClick={handleRevert}
+              >
+                Revert Back
+              </button>
+              <p className="text-center text-white/60 text-sm">Clicking revert back will restore this version.</p>
             </div>
-            
           </div>
         </Dialog>
-      )}
-
-      {/* AI Actions */}
-      {editing && (
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-row gap-4">
-            <button
-              disabled={!user?.hasGeminiKey || isProcessing}
-              onClick={handleSummarize}
-              className="flex items-center space-x-1 px-3 py-2 text-sm bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>Summarize</span>
-            </button>
-            <button
-              disabled={!user?.hasGeminiKey || isProcessing}
-              onClick={handleGenerateTags}
-              className="flex items-center space-x-1 px-3 py-2 text-sm bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-            >
-              <Tag className="h-4 w-4" />
-              <span>Generate Tags</span>
-            </button>
-          </div>
-          {!user?.hasGeminiKey && (
-            <p className="text-xs text-yellow-600 mt-2">
-              Add your Gemini API key in profile settings to use AI features
-            </p>
-          )}
-        </div>
       )}
     </div>
   );
