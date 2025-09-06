@@ -5,12 +5,17 @@ import { Dialog } from "@headlessui/react";
 import { X, MoveLeftIcon, Sparkles, Tag } from "lucide-react";
 import TextareaAutosize from "react-textarea-autosize";
 import { useAuthStore } from "../stores/authStore";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+
 import { useTheme } from "../context/ThemeContext";
+import { useDocumentStore } from "../stores/documentStore";
 
 const DocumentDetailsPage = () => {
   const { documentId } = useParams();
   const navigate = useNavigate();
   const { user, token } = useAuthStore();
+  const {deleteDocument} = useDocumentStore();
   const { theme } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false)
   const darkMode = theme === "dark";
@@ -68,36 +73,38 @@ const DocumentDetailsPage = () => {
     fetchDoc();
   }, [documentId, token]);
 
-  const handleUpdate = async () => {
-    setIsSaving(true);
-    try {
-      const res = await fetch(`http://localhost:5000/api/documents/${documentId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(editForm),
-      });
-      const updated = await res.json();
-      setDocument(updated);
-      setEditing(false);
-    } catch (err) {
-      console.error("Update failed:", err);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  
+  const handleDelete = async()=>{
+    if(!documentId) return;
+    setLoading(true);
 
-  const handleRevert = async () => {
+    try {
+      if(!confirm("Are you sure you want to delete ?")){
+        return;
+      }
+      await deleteDocument(token! , documentId);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Revert failed:", error);
+    } finally {
+      setLoading(false);
+    }
+
+  }
+
+  const handleRevert = async (selectedVersion : any) => {
+
     if (!selectedVersion) return;
+
+    let index = document.versions.findIndex((v : any) => v === selectedVersion);
+
     setLoading(true);
     try {
       const res = await fetch(`http://localhost:5000/api/documents/revert/${documentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          title: selectedVersion.title,
-          content: selectedVersion.content,
-          tags: selectedVersion.tags,
-          summary: selectedVersion.summary,
+          versionIndex : index
         }),
       });
       const updated = await res.json();
@@ -110,15 +117,7 @@ const DocumentDetailsPage = () => {
     }
   };
 
-  const isChanged = useMemo(() => {
-    if (!document) return false;
-    return (
-      editForm.title !== document.title ||
-      editForm.content !== document.content ||
-      editForm.summary !== (document.summary || "") ||
-      JSON.stringify(editForm.tags) !== JSON.stringify(document.tags || [])
-    );
-  }, [editForm, document]);
+  
 
   if (loading) return (
     <div className={`flex min-h-screen items-center justify-center ${darkMode ? "bg-black text-white" : "bg-white text-black"}`}>
@@ -130,26 +129,74 @@ const DocumentDetailsPage = () => {
   if (!document) return <div className={`p-6 ${darkMode ? "bg-black text-white" : "bg-white text-black"}`}>Document not found</div>;
 
   return (
-    <div className={`${darkMode ? "bg-black text-white" : "bg-white text-black"} p-6 min-h-screen flex flex-col gap-6`}>
+    <div className={`${darkMode ? "bg-black text-white" : "bg-white text-black"} [scrollbar-width:none] 
+  [-ms-overflow-style:none] 
+  [&::-webkit-scrollbar]:w-0 
+  [&::-webkit-scrollbar]:h-0 p-6 min-h-screen flex flex-col gap-6`}>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between  items-center">
         <div className="flex items-center gap-4">
           <MoveLeftIcon className="cursor-pointer" onClick={() => navigate("/dashboard")} />
           <h1 className="text-3xl font-bold text-blue-500">{document.title}</h1>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => navigate(`/documents/${documentId}/edit`)} className="px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white">Edit</button>
-          <button onClick={() => {/* delete logic */}} className="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white">Delete</button>
-        </div>
+        <div className="flex gap-4">
+  {/* Edit Button */}
+  <button
+    onClick={() => navigate(`/documents/${documentId}/edit`)}
+    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 border-blue-500  hover:bg-blue-500 bg-blue-500 text-white hover:-translate-y-1 transition-all duration-150 hover:text-white cursor-pointer "
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M11 5h2m-1-1v2m-7 4h2m-1-1v2m4 4h2m-1-1v2m4-4h2m-1-1v2m-7-7h2m-1-1v2"
+      />
+    </svg>
+    Edit
+  </button>
+
+  {/* Delete Button */}
+  <button
+    onClick={handleDelete}
+    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-500  hover:bg-red-500 bg-red-500 text-white hover:-translate-y-1 hover:text-white cursor-pointer transition-all duration-150"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M6 18L18 6M6 6l12 12"
+      />
+    </svg>
+    Delete
+  </button>
+</div>
+
       </div>
 
-      <div className="flex flex-col  lg:flex-row ">
+      <div className="flex flex-col   lg:flex-row ">
   {/* Left: Content full-page style */}
-<div className="flex-1 max-h-[calc(100vh-98px)] relative p-10 px-0 md:px-10 overflow-y-auto flex justify-center items-start">
+<div className="flex-1 max-h-[calc(100vh-98px)] [scrollbar-width:none] 
+  [-ms-overflow-style:none] 
+  [&::-webkit-scrollbar]:w-2 
+  [&::-webkit-scrollbar]:h-4 relative p-10 px-0 md:px-10 overflow-y-auto flex justify-center items-start">
   <div
     className={`prose max-w-[700px] min-h-[100vh] shadow-xl  w-full p-6 border rounded-lg
       ${darkMode
-        ? "prose-invert border-white/30 bg-white/10  shadow-light-white text-white"
+        ? "prose-invert border-white/30 bg-white/5 shadow-white/10 text-white"
         : "border-black/10 bg-white text-black"
       }`} style={{ zoom: zoom }}
     dangerouslySetInnerHTML={{ __html: document.content }}
@@ -176,21 +223,21 @@ const DocumentDetailsPage = () => {
   {/* Right: metadata */}
 {/* Right: metadata */}
 <div
-  className={`flex-shrink-0 flex flex-col border-l gap-4 pl-5 overflow-y-auto max-h-[calc(100vh-98px)] transition-all duration-300 relative ${darkMode && "border-white"} ${
+  className={`flex-shrink-0  flex flex-col border-l gap-4 pl-5 overflow-y-auto max-h-[calc(100vh-98px)] transition-all duration-300 relative ${darkMode && "border-white"} ${
     isCollapsed ? "w-16" : "w-full lg:w-80"
   }`}
 >
   {/* Collapse button */}
   <button
     onClick={() => setIsCollapsed((prev) => !prev)}
-    className={`absolute top-2 hidden rounded-full hover:bg-black/20 transition-all duration-300 right-3 cursor-pointer w-8 h-8 lg:flex items-center justify-center ${darkMode && "text-white hover:bg-white/20"}`}
+    className={`absolute top-2 hidden rounded-full hover:bg-black/20 transition-all duration-300 right-3 cursor-pointer w-8 h-8 lg:flex z-10 items-center justify-center ${darkMode && "text-white hover:bg-white/20"}`}
   >
     {isCollapsed ? <ChevronLeft /> : <ChevronRight/> }
   </button>
 
   {/* Tags */}
-  <div>
-    <h2 className={`${isCollapsed ? "-rotate-90 mt-20 rounded-2xl" : "rotate-0"} font-semibold mb-2 text-blue-500`}>Tags</h2>
+  <div className={`${isCollapsed ? "mt-15" : ""}`}>
+    <h2 className={`${isCollapsed ? "-rotate-90  rounded-2xl" : "rotate-0"} lg:mt-4 font-semibold mb-2 text-blue-500`}>Tags</h2>
     {!isCollapsed && (
       <div className="flex flex-wrap gap-2">
         {document.tags?.map((tag: string, i: number) => (
@@ -252,17 +299,17 @@ const DocumentDetailsPage = () => {
               <X className="h-6 w-6" />
             </button>
             <h3 className={`text-xl font-semibold mb-4 ${darkMode && "text-blue-500"}`}>Version Details</h3>
-            <h2 className="font-bold text-blue-500 mb-3 text-xl">{selectedVersion.title}</h2>
+            <h2 className="font-bold text-blue-500 mb-3 text-2xl">{selectedVersion.title}</h2>
             <p className="text-sm mb-2">Updated on: <span className="font-medium">{new Date(selectedVersion.updatedAt).toLocaleString()}</span></p>
             <p className="text-sm mb-4">Updated by: <span className="font-medium">{selectedVersion.updatedBy?.name || "Unknown"} ({selectedVersion.updatedBy?.email || "No email"})</span></p>
 
             <div className="mb-4">
-              <h4 className={`text-lg font-medium ${darkMode && "text-blue-500"}`}>Summary</h4>
+              <h4 className={`text-lg font-medium text-blue-500`}>Summary</h4>
               <p className="italic">{selectedVersion.summary || "No summary"}</p>
             </div>
 
             <div className="mb-4">
-              <h4 className={`text-lg font-medium ${darkMode && "text-blue-500"}`}>Tags</h4>
+              <h4 className={`text-lg font-medium text-blue-500`}>Tags</h4>
               <div className="flex flex-wrap gap-2 mt-1">
                 {selectedVersion.tags?.length > 0 ? (
                   selectedVersion.tags.map((tag: string, i: number) => (
@@ -272,15 +319,17 @@ const DocumentDetailsPage = () => {
               </div>
             </div>
 
-            <div>
-              <h4 className={`text-lg font-medium mb-2 ${darkMode && "text-blue-500"}`}>Content</h4>
-              <p className="whitespace-pre-wrap">{selectedVersion.content}</p>
+            <div className="mb-4">
+              <h4 className={`text-lg font-medium mb-2 text-blue-500`}>Content</h4>
+              
+              <div className={`prose p-4 ${ darkMode ? "bg-white/10 prose-invert" :"bg-black/5"} min-h-[80vh]`} dangerouslySetInnerHTML={{ __html: selectedVersion.content }}/>
             </div>
+
 
             <div className="w-full flex flex-col gap-2 items-center justify-center mt-3">
               <button
                 className="bg-blue-500 text-white hover:bg-blue-700 transition-all duration-150 px-4 py-2 rounded-2xl cursor-pointer"
-                onClick={handleRevert}
+                onClick={()=>handleRevert(selectedVersion)}
               >
                 Revert Back
               </button>

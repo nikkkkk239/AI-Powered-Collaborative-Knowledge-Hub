@@ -148,7 +148,7 @@ const TeamPage: React.FC = () => {
               >
                 <p className="text-xs text-gray-400 uppercase">Team ID</p>
                 <p className={`${darkMode ? "text-gray-300" : "text-gray-600"} text-sm`}>
-                  {team._id}
+                  ***************
                 </p>
               </div>
             </div>

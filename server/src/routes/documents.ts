@@ -176,7 +176,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
     const embedding = await getEmbedding(process.env.EMBEDDING_KEY!, `${title || document.title}\n${plainText}`);
 
     // Save current state as a new version
-    document.versions.push({
+    document.versions.unshift({
       title: document.title,
       content: document.content,
       summary: document.summary,
@@ -250,7 +250,7 @@ router.put('/revert/:id', authenticate, async (req: AuthRequest, res) => {
     const targetVersion = document.versions[versionIndex];
 
     // Save current doc as version
-    document.versions.push({
+    document.versions.unshift({
       title: document.title,
       content: document.content,
       summary: document.summary,
@@ -265,6 +265,8 @@ router.put('/revert/:id', authenticate, async (req: AuthRequest, res) => {
     document.content = targetVersion.content;
     document.summary = targetVersion.summary;
     document.tags = targetVersion.tags;
+
+    document.versions.splice(versionIndex + 1, 1);
 
     if (document.versions.length > 5) {
       document.versions = document.versions.slice(-5);

@@ -197,3 +197,14 @@ box-shadow: rgba(142, 141, 141, 0.12) 0px 1px 3px, rgba(145, 144, 144, 0.24) 0px
 .hide-scrollbar::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
+
+
+.prose .ql-align-center {
+  text-align: center !important;
+}
+.prose .ql-align-right {
+  text-align: right !important;
+}
+.prose .ql-align-justify {
+  text-align: justify !important;
+}

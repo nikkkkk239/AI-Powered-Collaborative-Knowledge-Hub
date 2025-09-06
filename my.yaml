@@ -31,4 +31,17 @@ negativeNum: !!int -1
 binaryNum: !!int 0b100
 commaValue: !!int 540_000
 
+---
+
+sequence: !!seq
+  -hey
+  -hi
+  -ok
+
+sparse seq: !!seq
+  -
+  -nikhil
+  -NULL
+
+
 ...
