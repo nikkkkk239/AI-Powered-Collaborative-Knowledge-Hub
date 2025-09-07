@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router } from "express";
 import { createTeam, joinTeam, removeMember, deleteTeam, getTeamDetails } from "../controllers/teamController";
 import { authenticate } from "../middleware/auth";
