@@ -163,6 +163,22 @@ export default function BubbleMenu({
   }, [isMenuOpen, showOverlay, animationEase, animationDuration, staggerDelay]);
 
   useEffect(() => {
+    if (isMenuOpen) {
+      // Disable scroll
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Re-enable scroll
+      document.body.style.overflow = '';
+    }
+
+    // Cleanup just in case
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
+
+
+  useEffect(() => {
     const handleResize = () => {
       if (isMenuOpen) {
         const bubbles = bubblesRef.current.filter(Boolean);

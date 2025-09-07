@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -6,6 +6,9 @@ import TextareaAutosize from "react-textarea-autosize";
 import { useAuthStore } from "../stores/authStore";
 import { Sparkles, Tag } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
+import Quill from "quill";
+import ImageResize from "quill-image-resize-module-react";
+
 
 const DocumentEditPage = () => {
   const { documentId } = useParams();
@@ -15,6 +18,7 @@ const DocumentEditPage = () => {
   const darkMode = theme === "dark";
 
   const [document, setDocument] = useState<any>(null);
+  const [originalDoc, setOriginalDoc] = useState<any>(null);
   const [editForm, setEditForm] = useState({
     title: "",
     content: "",
@@ -22,8 +26,31 @@ const DocumentEditPage = () => {
     tags: [] as string[],
   });
   const [loading, setLoading] = useState(true);
+  const [isChanged, setIsChanged] = useState(false);
+
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const fullToolbar = {
+      toolbar: [
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ header: [1, 2, 3, 4, 5, 6, false] }],
+        [{ font: [] }],
+        [{ size: [] }],
+        [{ list: 'ordered' }, { list: 'bullet' }, { list: 'check' }],
+        [{ indent: '-1' }, { indent: '+1' }],
+        [{ align: [] }],
+        [{ color: [] }, { background: [] }],
+        ['blockquote', 'code-block'],
+        [{ script: 'sub' }, { script: 'super' }],
+        [{ direction: 'rtl' }],
+        ['link', 'image', 'video', 'formula'],
+        ['clean'],
+      ],
+      imageResize: {
+        parchment: Quill.import("parchment"),
+        modules: ["Resize", "DisplaySize", "Toolbar"]
+      }
+    };
 
   // Fetch document
   useEffect(() => {
@@ -34,12 +61,15 @@ const DocumentEditPage = () => {
         });
         const data = await res.json();
         setDocument(data);
-        setEditForm({
+        const cleanDoc = {
           title: data.title,
           content: data.content,
           summary: data.summary || "",
           tags: data.tags || [],
-        });
+        };
+        setEditForm(cleanDoc);
+        setOriginalDoc(data)
+        setIsChanged(false);
       } catch (err) {
         console.error(err);
       } finally {
@@ -50,6 +80,7 @@ const DocumentEditPage = () => {
   }, [documentId, token]);
 
   const handleSave = async () => {
+    if(!isChanged) return;
     setIsSaving(true);
     try {
       const res = await fetch(`http://localhost:5000/api/documents/${documentId}`, {
@@ -77,6 +108,29 @@ const DocumentEditPage = () => {
   };
 
   const removeTag = (tag: string) => setEditForm({ ...editForm, tags: editForm.tags.filter(t => t !== tag) });
+
+  useEffect(() => {
+    if (!originalDoc) return;
+
+    const normalize = (obj: any) => ({
+      ...obj,
+      title: obj.title?.trim(),
+      content: obj.content?.trim().replace(/\s+/g, " "),
+      summary: obj.summary?.trim(),
+      tags: [...(obj.tags || [])].sort(),
+    });
+
+    setIsChanged(
+      JSON.stringify(normalize(editForm)) !== JSON.stringify(normalize(originalDoc))
+    );
+  }, [editForm, originalDoc]);
+
+
+
+
+
+
+
 
   const handleSummarize = async () => {
     setIsProcessing(true);
@@ -112,44 +166,80 @@ const DocumentEditPage = () => {
     }
   };
 
-  if (loading) return <div className={`text-center min-h-screen ${darkMode ? "bg-black text-white" : "bg-white text-black"}`}>Loading...</div>;
+  if (loading) return (
+    <div className={`flex min-h-screen items-center justify-center ${darkMode ? "bg-black text-white" : "bg-white text-black"}`}>
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-current"></div>
+      <p className="ml-3">Loading...</p>
+    </div>
+  );
 
   return (
-    <div className={`${darkMode ? "bg-black text-white" : "bg-white text-black"} min-h-screen p-6 max-w-4xl mx-auto`}>
+    <div className={`${darkMode ? "bg-black text-white" : "bg-white text-black"} min-h-screen p-6 w-full mx-auto`}>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div
+        className={`
+          sticky top-0 z-50 
+          flex justify-between items-center 
+          mb-5 p-4 ${darkMode ? "bg-black/50" : "bg-white/70"}
+          backdrop-blur-md  mx-auto
+        `}
+      >
         <input
           type="text"
           value={editForm.title}
           onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-          className={`text-3xl font-bold border-b px-2 w-full ${darkMode ? "border-white text-white" : "border-black text-black"} focus:outline-none`}
+          className={`text-3xl font-bold border-b px-2 w-full max-w-[300px] focus:outline-none ${
+            darkMode ? "border-white text-blue-500" : "border-black text-blue-500"
+          }`}
         />
+
         <div className="flex gap-3">
           <button
             onClick={handleSave}
-            disabled={isSaving}
-            className={`px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 ${isSaving ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={!isChanged || isSaving}
+            className={`px-5 py-2 rounded-full hover:-translate-y-1 transition-all duration-200 cursor-pointer bg-green-600 text-white hover:bg-green-700 ${
+              isSaving || !isChanged ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             {isSaving ? "Saving..." : "Save"}
           </button>
-          <button onClick={handleCancel} className="px-4 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500">Cancel</button>
+          <button
+            onClick={handleCancel}
+            className="px-5 py-2 rounded-full hover:-translate-y-1 transition-all duration-200 cursor-pointer bg-gray-400 text-white hover:bg-gray-500"
+          >
+            Cancel
+          </button>
         </div>
       </div>
 
+
       {/* Content */}
-      <div className="mb-15">
-        <h2 className={`text-xl font-semibold mb-2 ${darkMode ? "text-blue-500" : "text-blue-700"}`}>Content</h2>
+      <div className="mb-15 w-full">
+        {/* <h2 className={`text-xl font-semibold mb-4 ${darkMode ? "text-blue-500" : "text-blue-700"}`}>Content</h2> */}
         <ReactQuill
           value={editForm.content}
           onChange={(val) => setEditForm({ ...editForm, content: val })}
           theme="snow"
-          style={{ height: "300px" }}
+          style={{ height: "fit-content" }}
+          className={` [&_.ql-container]:min-h-[80vh] [&_.ql-container]:p-4 [&_.ql-container]:max-h-[80vh] [&_.ql-container]:overflow-y-scroll  [&_.ql-editor]:border-1 [&_.ql-editor]:border-black/10 [&_.ql-editor]:max-w-3xl [&_.ql-editor]:shadow-xl ${ darkMode && "[&_.ql-editor]:shadow-white/10 [&_.ql-editor]:bg-white/7 [&_.ql-editor]:border-white/10"} [&_.ql-container]:outline-none [&_.ql-editor]:min-h-[80vh] [&_.ql-editor]:mx-auto`}
+          modules={fullToolbar}
         />
       </div>
 
       {/* Summary */}
-      <div className="mb-3">
-        <h2 className={`text-lg font-semibold mb-2 ${darkMode ? "text-blue-500" : "text-blue-700"}`}>Summary</h2>
+      <div className="mb-4">
+        <div className="flex w-full justify-between mb-2 items-center">
+           <h2 className={`text-lg font-semibold mb-2 ${darkMode ? "text-blue-500" : "text-blue-700"}`}>Summary</h2>
+          <button
+          onClick={handleSummarize}
+          disabled={!user?.hasGeminiKey || isProcessing}
+          className="flex items-center space-x-1 px-3 py-2 bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 cursor-pointer disabled:opacity-50"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>Summarize</span>
+          </button>
+        </div>
+       
         <TextareaAutosize
           minRows={2} maxRows={10}
           value={editForm.summary}
@@ -160,7 +250,18 @@ const DocumentEditPage = () => {
 
       {/* Tags */}
       <div className="mb-6">
-        <h2 className={`text-lg font-semibold mb-2 ${darkMode ? "text-blue-500" : "text-blue-700"}`}>Tags</h2>
+        <div className="flex justify-between w-full items-center">
+          <h2 className={`text-lg font-semibold mb-2 ${darkMode ? "text-blue-500" : "text-blue-700"}`}>Tags</h2>
+          <button
+            onClick={handleGenerateTags}
+            disabled={!user?.hasGeminiKey || isProcessing}
+            className="flex items-center cursor-pointer space-x-1 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100 disabled:opacity-50"
+          >
+            <Tag className="h-4 w-4" />
+            <span>Generate Tags</span>
+          </button>
+        </div>
+        
         <div className="flex flex-wrap gap-2">
           {editForm.tags.map((tag, i) => (
             <span key={i} className={`px-3 py-1 rounded-full ${darkMode ? "bg-white/10 text-white" : "bg-blue-100 text-blue-700"} flex items-center gap-2`}>
@@ -179,22 +280,8 @@ const DocumentEditPage = () => {
 
       {/* AI Actions */}
       <div className="flex gap-2">
-        <button
-          onClick={handleSummarize}
-          disabled={!user?.hasGeminiKey || isProcessing}
-          className="flex items-center space-x-1 px-3 py-2 bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 disabled:opacity-50"
-        >
-          <Sparkles className="h-4 w-4" />
-          <span>Summarize</span>
-        </button>
-        <button
-          onClick={handleGenerateTags}
-          disabled={!user?.hasGeminiKey || isProcessing}
-          className="flex items-center space-x-1 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100 disabled:opacity-50"
-        >
-          <Tag className="h-4 w-4" />
-          <span>Generate Tags</span>
-        </button>
+        
+        
       </div>
       {!user?.hasGeminiKey && (
         <p className="text-xs text-yellow-600 mt-2">

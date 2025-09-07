@@ -9,6 +9,7 @@ import 'react-quill/dist/quill.snow.css'; // Quill styles
 import ImageResize from "quill-image-resize-module-react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import Quill from "quill";
+import { useTheme } from '../context/ThemeContext';
 
 Quill.register("modules/imageResize", ImageResize);
 
@@ -18,6 +19,9 @@ export const DocumentForm: React.FC = () => {
   const isEditing = !!id;
 
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const {theme} = useTheme();
+
+  const darkMode = theme == "dark";
 
   const fullToolbar = {
     toolbar: [
@@ -130,23 +134,23 @@ export const DocumentForm: React.FC = () => {
     <div className="max-w-5xl mx-auto relative">
       {/* Header */}
       <div className="mb-6">
-        <button onClick={() => navigate('/dashboard')} className="inline-flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white mb-4">
+        <button onClick={() => navigate('/dashboard')} className={`inline-flex items-center space-x-2 cursor-pointer ${darkMode ? "text-gray-300 hover:text-white" : "text-gray-600  hover:text-gray-900"} mb-4`}>
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Dashboard</span>
         </button>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{isEditing ? 'Edit Document' : 'Create New Document'}</h1>
+        <h1 className={`text-2xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>{isEditing ? 'Edit Document' : 'Create New Document'}</h1>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white dark:shadow-white/10 dark:bg-black rounded-lg shadow-sm dark:shadow-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6 relative z-10">
+      <form onSubmit={handleSubmit} className={` ${darkMode ?"shadow-white/10 shadow-lg bg-black border-gray-700" : "border-gray-200 bg-white shadow-sm"}  rounded-lg  border   p-6 space-y-6 relative z-10`}>
         
         {/* Fullscreen overlay */}
         {isFullscreen && (
           <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex justify-center items-start p-8 overflow-y-auto">
-            <div className="w-full max-w-5xl bg-white dark:bg-black py-8 md:px-6 rounded-md shadow-lg relative min-h-[90vh]">
+            <div className={`w-full max-w-5xl ${darkMode ?" bg-black" : "bg-white"} py-8 md:px-6 rounded-md shadow-lg relative min-h-[90vh]`}>
               <div className="flex justify-between items-center mb-4">
-                <label className="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Content</label>
-                <button type="button" onClick={() => setIsFullscreen(false)} className="p-2 rounded-md text-gray-800 dark:text-white/70 cursor-pointer hover:text-white transition-colors z-50">
+                <label className={`block text-lg font-medium ${darkMode ? "text-gray-300" : "text-gray-700 "} mb-2`}>Content</label>
+                <button type="button" onClick={() => setIsFullscreen(false)} className={`p-2 rounded-md  ${darkMode ? "text-white/70 hover:text-white" :"text-black/50 hover:text-black"} cursor-pointer  transition-colors z-50`}>
                   
                   <Minimize2 className="h-5 w-5" />
                 </button>
@@ -177,14 +181,14 @@ export const DocumentForm: React.FC = () => {
           <>
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+              <label className={`block text-sm font-medium ${darkMode ? "text-white/90" : "text-black"} mb-2`}>Title</label>
               <input
                 type="text"
                 required
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full px-4 py-2 border  border-gray-300 rounded-md bg-white  text-gray-900 0 focus:outline-none focus:ring-2 focus:ring-blue-500 ${darkMode && "border-gray-600 bg-white/10 text-white"}`}
                 placeholder="Document title..."
               />
             </div>
@@ -192,11 +196,11 @@ export const DocumentForm: React.FC = () => {
             {/* Editor */}
             <div className="relative">
               <div className='mb-3 flex items-center justify-between'>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Content</label>
+                <label className={`block text-sm font-medium ${darkMode ? "text-white/90" : "text-black"} mb-2`}>Content</label>
                 <button 
                   type="button" 
                   onClick={() => setIsFullscreen(true)} 
-                  className="p-2 rounded-md text-gray-800 dark:text-white/50 hover:text-white transition-colors cursor-pointer"
+                  className={`p-2 rounded-md  ${darkMode ? "text-white/70 hover:text-white" :"text-black/50 hover:text-black"} cursor-pointer  transition-colors z-50`}
                 >
                   <Maximize2 className="h-5 w-5" />
                 </button>
@@ -213,19 +217,19 @@ export const DocumentForm: React.FC = () => {
 
             <div>
           <div className="flex items-center justify-between mb-3">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Summary</label>
+            <label className={`block text-sm font-medium ${darkMode ? "text-white/90" : "text-black"} mb-2`}>Summary</label>
             <button type="button" onClick={handleSummarize} disabled={!formData.content || isProcessing || !user?.hasGeminiKey} className="inline-flex items-center space-x-1 px-3 py-2 text-sm bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               <Sparkles className="h-4 w-4" />
               <span>AI Summarize</span>
             </button>
           </div>
-          <textarea name="summary" rows={3} value={formData.summary} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Document summary..." />
+          <textarea name="summary" rows={3} value={formData.summary} onChange={handleChange} className={`w-full px-4 py-2 border  border-gray-300 rounded-md bg-white  text-gray-900 0 focus:outline-none focus:ring-2 focus:ring-blue-500 ${darkMode && "border-gray-600 bg-white/10 text-white"}`} placeholder="Document summary..." />
         </div>
 
         {/* Tags */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tags</label>
+            <label className={`block text-sm font-medium ${darkMode ? "text-white/90" : "text-black"} mb-2`}>Tags</label>
             <button type="button" onClick={handleGenerateTags} disabled={!formData.content || isProcessing || !user?.hasGeminiKey} className="inline-flex items-center space-x-1 px-3 py-2 text-sm bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               <Tag className="h-4 w-4" />
               <span>AI Generate</span>
@@ -238,10 +242,10 @@ export const DocumentForm: React.FC = () => {
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-4 py-2 border  border-gray-300 rounded-md bg-white  text-gray-900 0 focus:outline-none focus:ring-2 focus:ring-blue-500 ${darkMode && "border-gray-600 bg-white/10 text-white"}`}
               placeholder="Add tags..."
             />
-            <button type="button" onClick={addTag} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">Add</button>
+            <button type="button" onClick={addTag} className="px-4 py-2 cursor-pointer bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">Add</button>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -256,8 +260,8 @@ export const DocumentForm: React.FC = () => {
 
         {/* Submit */}
         <div className="flex justify-end space-x-4">
-          <button type="button" onClick={() => navigate('/dashboard')} className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
-          <button type="submit" className="inline-flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+          <button type="button" onClick={() => navigate('/dashboard')} className={`px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md ${darkMode ? "hover:bg-white/40" : "hover:bg-black"} cursor-pointer transition-colors`}>Cancel</button>
+          <button type="submit" className="inline-flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer transition-colors">
             <Save className="h-4 w-4" />
             <span>{isEditing ? 'Update' : 'Create'}</span>
           </button>
