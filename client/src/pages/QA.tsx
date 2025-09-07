@@ -69,7 +69,7 @@ export const QA: React.FC = () => {
 
   return (
     <Layout>
-      <div className={`${darkMode ? "bg-black text-white" : "bg-white text-black"} max-w-4xl mx-auto space-y-6`}>
+      <div className={`${darkMode ? "bg-black text-white" : " text-black"} max-w-4xl mx-auto space-y-6`}>
         <div className='slide-down-in'>
           <h1 className="text-2xl font-bold">
             Team <span className='text-blue-700'>Q&A</span>
@@ -91,7 +91,7 @@ export const QA: React.FC = () => {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 rows={3}
-                className={`${darkMode ? "bg-black text-white border-white/40" : "bg-white text-black border-black"} w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`${darkMode ? "bg-black text-white border-white/40" : "bg-black/5 text-black border-gray-500"} w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 placeholder="What would you like to know about your team's documents?"
               />
             </div>
@@ -184,8 +184,8 @@ export const QA: React.FC = () => {
         {!loading && qaList.length === 0 && (
           <div className={`${darkMode ? "bg-black/50 text-white/60 border-white/40" : "bg-white text-black border-black"} text-center py-12 rounded-lg shadow-sm border`}>
             <MessageCircle className={`${darkMode ? "text-white" : "text-gray-400"} h-12 w-12 mx-auto mb-4`} />
-            <h3 className="text-lg font-medium mb-2">No questions yet</h3>
-            <p>Ask your first question to get AI-powered answers from your knowledge base</p>
+            <h3 className={`text-lg font-medium mb-2 ${darkMode ? "text-white" : "text-black"}`}>No questions yet</h3>
+            <p className={`${darkMode ? "text-white/50" : "text-black/55"}`}>Ask your first question to get AI-powered answers from your knowledge base</p>
           </div>
         )}
       </div>

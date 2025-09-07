@@ -66,7 +66,7 @@ export const Search: React.FC = () => {
 
   return (
     <Layout>
-      <div className={`${darkMode ? "bg-black text-white" : "bg-white text-black"} max-w-4xl slide-down-in mx-auto space-y-6`}>
+      <div className={`${darkMode ? "bg-black text-white" : "text-black"} max-w-4xl slide-down-in mx-auto space-y-6`}>
         <div>
           <h1 className="text-2xl font-bold">
             Search <span className='text-blue-700'>Documents</span>
@@ -85,7 +85,7 @@ export const Search: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleRegularSearch()}
-                className={`${darkMode ? "bg-white/10 text-white border-white/40" : "bg-white text-black border-black"} w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`${darkMode ? "bg-white/10 text-white border-white/40" : "bg-black/5 text-black border-black"} w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 placeholder="Search for documents or topics..."
               />
             </div>

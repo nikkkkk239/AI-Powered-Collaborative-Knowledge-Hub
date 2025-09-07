@@ -10,11 +10,13 @@ const JoinTeam: React.FC = () => {
   const [teamName, setTeamName] = useState("");
   const [teamDescription, setTeamDescription] = useState("");
   const [teamId, setTeamId] = useState("");
+  const [isLoading , setIsLoading] = useState(false);
 
   const { user, createTeam, joinTeam } = useAuthStore();
 
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     if (!teamName.trim()) {
       toast.error("Team name is required");
       return;
@@ -25,10 +27,14 @@ const JoinTeam: React.FC = () => {
     } catch (err: any) {
       toast.error(err.message || "Failed to create team");
     }
+    finally{
+      setIsLoading(false);
+    }
   };
 
   const handleJoinTeam = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     if (!teamId.trim()) {
       toast.error("Team ID is required");
       return;
@@ -38,6 +44,9 @@ const JoinTeam: React.FC = () => {
       navigate("/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Failed to join team");
+    }
+    finally{
+      setIsLoading(false);
     }
   };
 
@@ -87,23 +96,24 @@ const JoinTeam: React.FC = () => {
           <div className="flex justify-between mb-6">
             <button
               onClick={() => setMode("join")}
-              className={`w-1/2 py-2 font-medium rounded-l-xl ${
+              className={`w-1/2 py-2 cursor-pointer font-medium rounded-l-xl ${
                 mode === "join"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-600"
               }`}
             >
-              Join Team
+              {isLoading ? "Joining..." :"Join Team"}
             </button>
             <button
               onClick={() => setMode("create")}
-              className={`w-1/2 py-2 font-medium rounded-r-xl ${
+              className={`w-1/2 py-2 font-medium cursor-pointer rounded-r-xl ${
                 mode === "create"
                   ? "bg-green-600 text-white"
                   : "bg-gray-100 text-gray-600"
               }`}
             >
-              Create Team
+              {isLoading ? "Creating..." :"Create Team"}
+
             </button>
           </div>
 

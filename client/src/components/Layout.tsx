@@ -122,7 +122,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               <button
                 onClick={logout}
-                className={`p-2 rounded-full transition-colors ${dark ? "text-gray-300 hover:text-white hover:bg-white/5" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"}`}
+                className={`p-2 rounded-full cursor-pointer transition-colors ${dark ? "text-gray-300 hover:text-white hover:bg-white/5" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"}`}
               >
                 <LogOut className="h-5 w-5" />
               </button>
