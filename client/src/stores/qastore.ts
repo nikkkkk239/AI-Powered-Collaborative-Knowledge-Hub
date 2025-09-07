@@ -37,7 +37,7 @@ export const useQAStore = create<QAStore>((set, get) => ({
     try {
       set({ isProcessing: true, error: null });
 
-      const response = await fetch(`${API_BASE_URL}/api/q&a/`, { 
+      const response = await fetch(`${API_BASE_URL}/q&a/`, { 
         method : "POST",
         headers: {
             'Content-Type': 'application/json',
@@ -65,7 +65,7 @@ export const useQAStore = create<QAStore>((set, get) => ({
   },
   fetchQuestions : async(token : string)=>{
     try {
-        const response = await fetch(`${API_BASE_URL}/api/q&a/`, { 
+        const response = await fetch(`${API_BASE_URL}/q&a/`, { 
         method : "GET",
         headers: {
             'Content-Type': 'application/json',
