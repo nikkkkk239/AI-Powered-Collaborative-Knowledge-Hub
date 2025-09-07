@@ -223,7 +223,7 @@ const DocumentDetailsPage = () => {
   {/* Right: metadata */}
 {/* Right: metadata */}
 <div
-  className={`flex-shrink-0  flex flex-col border-l gap-4 pl-5 overflow-y-auto max-h-[calc(100vh-98px)] transition-all duration-300 relative ${darkMode && "border-white"} ${
+  className={`flex-shrink-0 min-h-[calc(100vh-98px)] flex flex-col border-l gap-4 pl-5 overflow-y-auto max-h-[calc(100vh-98px)] transition-all duration-300 relative ${darkMode && "border-white"} ${
     isCollapsed ? "w-16" : "w-full lg:w-80"
   }`}
 >

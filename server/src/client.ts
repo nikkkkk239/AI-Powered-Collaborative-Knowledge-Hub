@@ -1,21 +1,50 @@
 import { createClient } from "redis";
+import dotenv from "dotenv"
+
+dotenv.config();
 
 const client = createClient({
   username: "default",
-  password: "1s6y3SW8VzyQ6EyVA62nUhso1ekKjgPT",
+  password: process.env.REDIS_PASSWORD, // move to process.env.REDIS_PASSWORD in prod!
   socket: {
-    host: "redis-13681.crce206.ap-south-1-1.ec2.redns.redis-cloud.com",
+    host: process.env.REDIS_HOST,
     port: 13681,
+    reconnectStrategy: (retries) => {
+      console.warn(`🔄 Redis reconnect attempt #${retries}`);
+      return Math.min(retries * 100, 5000); // retry up to 5s
+    },
+    keepAlive: true, 
   },
 });
 
-client.on("error", (err) => console.error("Redis Client Error", err));
+// ---- Event logging ----
+client.on("connect", () => console.log("🟡 Connecting to Redis..."));
+client.on("ready", () => console.log("✅ Redis client ready"));
+client.on("end", () => console.warn("⚠️ Redis connection closed"));
+client.on("reconnecting", () => console.log("🔄 Redis reconnecting..."));
+client.on("error", (err) => console.error("❌ Redis Client Error:", err));
 
-// Async function to connect once
+let heartbeatInterval: NodeJS.Timeout | null = null;
+
+// Async connect function
 export const connectRedis = async () => {
   if (!client.isOpen) {
-    await client.connect();
-    console.log("✅ Connected to Redis");
+    try {
+      await client.connect();
+      console.log("🚀 Connected to Redis");
+      if (!heartbeatInterval) {
+        heartbeatInterval = setInterval(async () => {
+          try {
+            await client.ping();
+            console.log("💓 Redis heartbeat OK");
+          } catch (err) {
+            console.error("💔 Redis heartbeat failed:", err);
+          }
+        }, 30000); 
+      }
+    } catch (err) {
+      console.error("❌ Failed to connect to Redis:", err);
+    }
   }
 };
 
