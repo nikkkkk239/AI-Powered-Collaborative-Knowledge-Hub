@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
+import Logo from "../assets/logo.jpg"
 
 export const Login: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -66,7 +67,7 @@ export const Login: React.FC = () => {
       <div className="flex-1 flex  items-center justify-center bg-gray-50">
         <div  className="w-full  max-w-md  rounded-2xl  p-8">
           <div className="flex justify-center items-center gap-1 mb-6">
-            <img src="logo.jpg" alt="" className='w-10 h-10'/>
+            <img src={Logo} alt="" className='w-10 h-10'/>
             <span className="text-2xl font-bold text-blue-600 text-left w-full">HiveMind</span>
           </div>
 
