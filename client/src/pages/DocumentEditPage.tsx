@@ -19,7 +19,7 @@ const DocumentEditPage = () => {
   const darkMode = theme === "dark";
 
   const [document, setDocument] = useState<any>(null);
-  const [originalDoc, setOriginalDoc] = useState<any>(null);
+
   const [editForm, setEditForm] = useState({
     title: "",
     content: "",
@@ -27,7 +27,6 @@ const DocumentEditPage = () => {
     tags: [] as string[],
   });
   const [loading, setLoading] = useState(true);
-  const [isChanged, setIsChanged] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -69,8 +68,6 @@ const DocumentEditPage = () => {
           tags: data.tags || [],
         };
         setEditForm(cleanDoc);
-        setOriginalDoc(data)
-        setIsChanged(false);
       } catch (err) {
         console.error(err);
       } finally {
@@ -81,7 +78,7 @@ const DocumentEditPage = () => {
   }, [documentId, token]);
 
   const handleSave = async () => {
-    if(!isChanged) return;
+
     setIsSaving(true);
     try {
       const res = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
@@ -90,14 +87,16 @@ const DocumentEditPage = () => {
         body: JSON.stringify(editForm),
       });
       const updated = await res.json();
-      setDocument(updated);
-      navigate(`/document/edit/${documentId}`); // go back to details page
+      setDocument(updated); // update local snapshot
+      console.log("Document saved!");
+      navigate(`/document/edit/${documentId}`); 
     } catch (err) {
       console.error(err);
     } finally {
       setIsSaving(false);
     }
   };
+
 
   const handleCancel = () => navigate(`/document/edit/${documentId}`);
 
@@ -109,27 +108,6 @@ const DocumentEditPage = () => {
   };
 
   const removeTag = (tag: string) => setEditForm({ ...editForm, tags: editForm.tags.filter(t => t !== tag) });
-
-  useEffect(() => {
-    if (!originalDoc) return;
-
-    const normalize = (obj: any) => ({
-      ...obj,
-      title: obj.title?.trim(),
-      content: obj.content?.trim().replace(/\s+/g, " "),
-      summary: obj.summary?.trim(),
-      tags: [...(obj.tags || [])].sort(),
-    });
-
-    setIsChanged(
-      JSON.stringify(normalize(editForm)) !== JSON.stringify(normalize(originalDoc))
-    );
-  }, [editForm, originalDoc]);
-
-
-
-
-
 
 
 
@@ -188,7 +166,9 @@ const DocumentEditPage = () => {
         <input
           type="text"
           value={editForm.title}
-          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+          onChange={(e) => {
+            setEditForm({ ...editForm, title: e.target.value })
+          }}
           className={`text-3xl font-bold border-b px-2 w-full max-w-[300px] focus:outline-none ${
             darkMode ? "border-white text-blue-500" : "border-black text-blue-500"
           }`}
@@ -197,9 +177,9 @@ const DocumentEditPage = () => {
         <div className="flex gap-3">
           <button
             onClick={handleSave}
-            disabled={!isChanged || isSaving}
-            className={`px-5 py-2 rounded-full hover:-translate-y-1 transition-all duration-200 cursor-pointer bg-green-600 text-white hover:bg-green-700 ${
-              isSaving || !isChanged ? "opacity-50 cursor-not-allowed" : ""
+            disabled={isSaving}
+            className={`px-5 py-2 rounded-full hover:-translate-y-1 transition-all duration-200  bg-green-600 text-white hover:bg-green-700 ${
+              isSaving ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
             }`}
           >
             {isSaving ? "Saving..." : "Save"}

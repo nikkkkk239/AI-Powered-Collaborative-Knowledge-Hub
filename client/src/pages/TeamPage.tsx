@@ -37,7 +37,10 @@ const TeamPage: React.FC = () => {
   }, [getTeamDetails]);
 
   const handleRemoveMember = async (memberId: string) => {
+    setIsLoading(true);
     await removeMember(memberId);
+    setIsLoading(false);
+
   };
 
   const handleDeleteTeam = async () => {
@@ -259,7 +262,7 @@ const TeamPage: React.FC = () => {
                   className="px-6 py-3 flex cursor-pointer items-center justify-center gap-2 bg-red-600 text-white font-semibold rounded-xl shadow hover:bg-red-700 transition max-w-[200px]"
                 >
                   <Trash2 className="w-5 h-5" />
-                  Delete Team
+                  {deletingTeam ? "Deleting..." : "Delete Team"}
                 </button>
               </div>
             )}

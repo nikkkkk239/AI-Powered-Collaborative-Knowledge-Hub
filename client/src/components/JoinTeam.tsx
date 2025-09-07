@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuthStore } from "../stores/authStore";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import Logo from "../assets/logo.jpg"
 
 const JoinTeam: React.FC = () => {
   const navigate = useNavigate();
@@ -78,7 +79,7 @@ const JoinTeam: React.FC = () => {
         <div className="w-full max-w-md rounded-2xl p-8">
           {/* Logo */}
           <div className="flex justify-center items-center gap-2 mb-6">
-            <img src="logo.jpg" alt="HiveMind Logo" className="w-10 h-10" />
+            <img src={Logo} alt="Logo" className="w-10 h-10" />
             <span className="text-2xl font-bold text-blue-600">HiveMind</span>
           </div>
 
