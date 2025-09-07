@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-
+import { API_BASE_URL } from './authStore';
 interface AIState {
   isProcessing: boolean;
   
@@ -17,7 +17,7 @@ export const useAIStore = create<AIState>((set) => ({
   summarizeDocument: async (token: string, content: string, documentId?: string) => {
     set({ isProcessing: true });
     try {
-      const response = await fetch('http://localhost:5000/api/ai/summarize', {
+      const response = await fetch(`${API_BASE_URL}/ai/summarize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,7 +41,7 @@ export const useAIStore = create<AIState>((set) => ({
   generateTags: async (token: string, title: string, content: string) => {
     set({ isProcessing: true });
     try {
-      const response = await fetch('http://localhost:5000/api/ai/generate-tags', {
+      const response = await fetch(`${API_BASE_URL}/ai/generate-tags`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +65,7 @@ export const useAIStore = create<AIState>((set) => ({
   semanticSearch: async (token: string, query: string) => {
     set({ isProcessing: true });
     try {
-      const response = await fetch('http://localhost:5000/api/ai/search', {
+      const response = await fetch(`${API_BASE_URL}/ai/search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +89,7 @@ export const useAIStore = create<AIState>((set) => ({
   askQuestion: async (token: string, question: string) => {
     set({ isProcessing: true });
     try {
-      const response = await fetch('http://localhost:5000/api/ai/qa', {
+      const response = await fetch(`${API_BASE_URL}/ai/qa`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

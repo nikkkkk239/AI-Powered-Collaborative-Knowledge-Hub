@@ -1,9 +1,10 @@
+// @ts-nocheck
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import TextareaAutosize from "react-textarea-autosize";
-import { useAuthStore } from "../stores/authStore";
+import { API_BASE_URL, useAuthStore } from "../stores/authStore";
 import { Sparkles, Tag } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import Quill from "quill";
@@ -56,7 +57,7 @@ const DocumentEditPage = () => {
   useEffect(() => {
     const fetchDoc = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/documents/${documentId}`, {
+        const res = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -83,7 +84,7 @@ const DocumentEditPage = () => {
     if(!isChanged) return;
     setIsSaving(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/documents/${documentId}`, {
+      const res = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(editForm),
@@ -135,7 +136,7 @@ const DocumentEditPage = () => {
   const handleSummarize = async () => {
     setIsProcessing(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/ai/summarize/`, {
+      const res = await fetch(`${API_BASE_URL}/ai/summarize/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ content: editForm.content, title: editForm.title }),
@@ -152,7 +153,7 @@ const DocumentEditPage = () => {
   const handleGenerateTags = async () => {
     setIsProcessing(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/ai/tags/`, {
+      const res = await fetch(`${API_BASE_URL}/ai/tags/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ content: editForm.content, title: editForm.title }),

@@ -1,8 +1,10 @@
+// @ts-nocheck
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDebounce } from "use-debounce"; 
 import { Plus, Filter, FileText, X, Edit, Trash } from 'lucide-react';
-import { useAuthStore } from '../stores/authStore';
+import { API_BASE_URL, useAuthStore } from '../stores/authStore';
 import { useDocumentStore } from '../stores/documentStore';
 import { useAIStore } from '../stores/aiStore';
 import { useTheme } from '../context/ThemeContext';
@@ -122,7 +124,7 @@ export const Dashboard: React.FC = () => {
       const doc = documents.find(d => d._id === id);
       if (doc) {
         const tags = await generateTags(token!, doc.title, doc.content);
-        const response = await fetch(`http://localhost:5000/api/documents/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ tags }),

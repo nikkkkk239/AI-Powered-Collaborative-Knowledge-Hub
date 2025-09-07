@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { User } from './authStore';
+import { API_BASE_URL } from './authStore';
 
 interface Document {
   _id: string;
@@ -84,7 +85,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     try {
       const queryParams = new URLSearchParams(params);
       const response = await fetch(
-        `http://localhost:5000/api/documents?${queryParams}`,
+        `${API_BASE_URL}/documents?${queryParams}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -104,7 +105,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     set({ isLoading: true });
     try {
       const response = await fetch(
-        `http://localhost:5000/api/documents/${id}`,
+        `${API_BASE_URL}/documents/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -119,7 +120,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   },
 
   createDocument: async (token: string, data: any) => {
-    const response = await fetch('http://localhost:5000/api/documents', {
+    const response = await fetch(`${API_BASE_URL}/documents`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -139,7 +140,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   },
 
   updateDocument: async (token: string, id: string, data: any) => {
-    const response = await fetch(`http://localhost:5000/api/documents/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -164,7 +165,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   },
 
   deleteDocument: async (token: string, id: string) => {
-    const response = await fetch(`http://localhost:5000/api/documents/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -182,7 +183,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   fetchRecentActivity: async (token: string) => {
     try {
       const response = await fetch(
-        'http://localhost:5000/api/documents/activity/recent',
+        `${API_BASE_URL}/documents/activity/recent`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

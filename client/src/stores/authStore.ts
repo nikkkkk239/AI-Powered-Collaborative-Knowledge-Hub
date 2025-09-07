@@ -13,6 +13,8 @@ export interface User {
   geminiKey : string;
 }
 
+export const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 interface PopulatedUser{
   _id: string;
   name: string;
@@ -79,7 +81,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true });
         try {
-          const response = await fetch('http://localhost:5000/api/auth/login', {
+          const response = await fetch(`${API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -100,7 +102,7 @@ export const useAuthStore = create<AuthState>()(
       register: async (email: string, password: string, name: string) => {
         set({ isLoading: true });
         try {
-          const response = await fetch('http://localhost:5000/api/auth/register', {
+          const response = await fetch(`${API_BASE_URL}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, name }),
@@ -126,7 +128,7 @@ export const useAuthStore = create<AuthState>()(
       createTeam : async(data : {name : string , description?:string})=>{
         const {token} = get();
         try {
-          const response = await fetch("http://localhost:5000/api/team/",{
+          const response = await fetch(`${API_BASE_URL}/team/`,{
               method:"POST",
               headers:{
                 'Content-Type':"application/json",
@@ -153,7 +155,7 @@ export const useAuthStore = create<AuthState>()(
           const {token} = get();
           if(!token) throw new Error("Not Authenticated.");
 
-          const response = await fetch(`http://localhost:5000/api/team/${data.teamId}/join`,{
+          const response = await fetch(`${API_BASE_URL}/team/${data.teamId}/join`,{
             method : "POST",
             headers:{
               'Content-Type':"application/json",
@@ -180,7 +182,7 @@ export const useAuthStore = create<AuthState>()(
       getTeamDetails : async()=>{
         const {user , token} = get();
         try {
-          const response = await fetch(`http://localhost:5000/api/team/getDetails/${user?.teamId}`,{
+          const response = await fetch(`${API_BASE_URL}/team/getDetails/${user?.teamId}`,{
             method :"GET",
             headers:{
               'Content-Type': 'application/json',
@@ -207,7 +209,7 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           
-          const response = await fetch(`http://localhost:5000/api/team/${team?._id}`,{
+          const response = await fetch(`${API_BASE_URL}/team/${team?._id}`,{
             method :"DELETE",
             headers:{
               'Content-Type': 'application/json',
@@ -232,7 +234,7 @@ export const useAuthStore = create<AuthState>()(
         const {team, token} = get();
         try {
           
-          const response = await fetch(`http://localhost:5000/api/team/${team._id}/members/${memberId}`,{
+          const response = await fetch(`${API_BASE_URL}/team/${team?._id}/members/${memberId}`,{
             method :"DELETE",
             headers:{
               'Content-Type': 'application/json',
@@ -257,7 +259,7 @@ export const useAuthStore = create<AuthState>()(
         const { token } = get();
         if (!token) throw new Error('Not authenticated');
 
-        const response = await fetch('http://localhost:5000/api/users/profile', {
+        const response = await fetch(`${API_BASE_URL}/users/profile`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

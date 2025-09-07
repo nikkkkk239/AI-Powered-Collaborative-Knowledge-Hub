@@ -5,6 +5,7 @@ import { DocumentCard } from '../components/DocumentCard';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { API_BASE_URL } from '../stores/authStore';
 
 export const Search: React.FC = () => {
   const { token, user } = useAuthStore();
@@ -25,7 +26,7 @@ export const Search: React.FC = () => {
 
     setIsSearching(true);
     try {
-      const response = await fetch("http://localhost:5000/api/ai/search", {
+      const response = await fetch(`${API_BASE_URL}/ai/search`, {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
@@ -50,7 +51,7 @@ export const Search: React.FC = () => {
     if (!searchQuery.trim()) return;
     setIsSearching(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/documents?search=${encodeURIComponent(searchQuery)}`, {
+      const response = await fetch(`${API_BASE_URL}/documents?search=${encodeURIComponent(searchQuery)}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Search failed');

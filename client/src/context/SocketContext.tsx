@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from "r
 import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "../stores/authStore"; 
 
-const SOCKET_URL = "http://localhost:5000";
+const SOCKET_URL = "https://ai-powered-collaborative-knowledge-hub.onrender.com";
 
 type SocketContextType = Socket | null;
 

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import axios from "axios";
+import { API_BASE_URL } from "./authStore";
 
 interface User{
     name : string,
@@ -37,7 +37,7 @@ export const useQAStore = create<QAStore>((set, get) => ({
     try {
       set({ isProcessing: true, error: null });
 
-      const response = await fetch("http://localhost:5000/api/q&a/", { 
+      const response = await fetch(`${API_BASE_URL}/api/q&a/`, { 
         method : "POST",
         headers: {
             'Content-Type': 'application/json',
@@ -65,7 +65,7 @@ export const useQAStore = create<QAStore>((set, get) => ({
   },
   fetchQuestions : async(token : string)=>{
     try {
-        const response = await fetch("http://localhost:5000/api/q&a/", { 
+        const response = await fetch(`${API_BASE_URL}/api/q&a/`, { 
         method : "GET",
         headers: {
             'Content-Type': 'application/json',

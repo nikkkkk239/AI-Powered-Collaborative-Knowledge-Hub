@@ -1,20 +1,18 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Dialog } from "@headlessui/react";
-import { X, MoveLeftIcon, Sparkles, Tag } from "lucide-react";
-import TextareaAutosize from "react-textarea-autosize";
+import { X, MoveLeftIcon } from "lucide-react";
 import { useAuthStore } from "../stores/authStore";
-import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-
 import { useTheme } from "../context/ThemeContext";
 import { useDocumentStore } from "../stores/documentStore";
+import { API_BASE_URL } from "../stores/authStore";
 
 const DocumentDetailsPage = () => {
   const { documentId } = useParams();
   const navigate = useNavigate();
-  const { user, token } = useAuthStore();
+  const { token } = useAuthStore();
   const {deleteDocument} = useDocumentStore();
   const { theme } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -22,10 +20,7 @@ const DocumentDetailsPage = () => {
 
   const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [zoom , setZoom] = useState(1)
-  const [editing, setEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<any | null>(null);
   const [editForm, setEditForm] = useState({
     title: "",
@@ -52,7 +47,7 @@ const DocumentDetailsPage = () => {
   useEffect(() => {
     const fetchDoc = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/documents/${documentId}`, {
+        const res = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
           method: "GET",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         });
@@ -100,7 +95,7 @@ const DocumentDetailsPage = () => {
 
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/documents/revert/${documentId}`, {
+      const res = await fetch(`${API_BASE_URL}/documents/revert/${documentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
