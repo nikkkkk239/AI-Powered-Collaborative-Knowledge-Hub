@@ -59,6 +59,8 @@ app.get('/api/health', (req, res) => {
 // Error handling
 app.use(errorHandler);
 
+console.log("🔍 ENV CHECK:", { host: process.env.REDIS_HOST, password: process.env.REDIS_PASSWORD?.slice(0, 6) + "...", port: process.env.REDIS_PORT, });
+
 (async () => {
   await connectRedis(); // ensure Redis is connected before server starts
 })();
