@@ -3,7 +3,7 @@ import { Server } from "socket.io";
 import app from "./app"; // your express app
 import redisClient from "./client";
 
-async function startServer() {
+export default async function startServer() {
   const httpServer = createServer(app);
 
   const io = new Server(httpServer, {
@@ -82,11 +82,15 @@ async function startServer() {
   });
   
 
-  httpServer.listen(5000, () => {
-    console.log("🚀 Server running on http://localhost:5000");
+  httpServer.listen(3000, () => {
+    console.log("🚀 Server running on http://localhost:3000");
   });
 }
 
-startServer().catch((err) => {
-  console.error("❌ Error starting server:", err);
-});
+(async () => {
+  await startServer().catch((err) => {
+    console.error("❌ Error starting server:",  err);
+  });
+})();
+
+
